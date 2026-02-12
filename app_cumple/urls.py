@@ -4,5 +4,6 @@ from trabajadores.views import lista_trabajadores
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', lista_trabajadores),
     path('api/usuarios/', lista_trabajadores),
 ]
