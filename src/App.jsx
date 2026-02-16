@@ -165,7 +165,7 @@ function App() {
                 <Users className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">Directorio Corporativo</h1>
+                <h1 className="text-2xl font-bold text-gray-800">CMF Cumpleaños</h1>
                 <p className="text-sm text-gray-600">Busca y encuentra información de empleados</p>
               </div>
             </div>
@@ -185,7 +185,7 @@ function App() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
                     type="text"
-                    placeholder="Buscar por nombre, jefatura o gerencia..."
+                    placeholder="Buscar por nombre, jefatura o gerencia."
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && fetchUsuarios()}
@@ -278,16 +278,16 @@ function App() {
               <table className="w-full table-fixed">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="w-[8%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[6%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Estado
                     </th>
-                    <th className="w-[15%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[18%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Nombre
                     </th>
                     <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Cumpleaños
                     </th>
-                    <th className="w-[18%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[15%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Email
                     </th>
                     <th className="w-[16%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -296,7 +296,7 @@ function App() {
                     <th className="w-[16%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Gerencia
                     </th>
-                    <th className="w-[17%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[20%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Cargo
                     </th>
                   </tr>
