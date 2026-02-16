@@ -44,7 +44,7 @@ def buscar_usuario(nombre_usuario="*"):
         conn.search(
             search_base=settings.LDAP_CONFIG['BASE_DN'],
             search_filter=filtro_final,
-            attributes=['givenName', 'sn', 'mail', 'title', 'postalCode'],
+            attributes=['givenName', 'sn', 'mail', 'title', 'postalCode', 'manager', 'department'],
             size_limit=999 
         )
         
@@ -63,6 +63,8 @@ def buscar_usuario(nombre_usuario="*"):
                 'email': obtener_valor('mail') or "Sin correo",
                 'cargo': obtener_valor('title') or "Colaborador",
                 'cumpleanos': obtener_valor('postalCode'),
+                'jefatura': obtener_valor('manager'),
+                'gerencia': obtener_valor('department'),
             })
             
         return resultados
