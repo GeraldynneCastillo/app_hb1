@@ -18,15 +18,45 @@ function App() {
     try {
       const response = await fetch(`http://127.0.0.1:8000/api/usuarios/?q=${busqueda.trim()}`);
       const data = await response.json();
+      
+      // Cargar estados guardados del localStorage
+      const savedStates = JSON.parse(localStorage.getItem('usuariosEstados') || '{}');
+      
       const listaLimpia = (data.trabajadores || []).filter(
         u => u && u.nombre && u.nombre !== "" && u.nombre !== "[]" && u.nombre !== "No registrado"
-      );
+      ).map(u => {
+        // Crear un identificador único para cada usuario
+        const userId = `${u.nombre}_${u.apellido}_${u.email}`;
+        
+        // Si existe un estado guardado, usarlo; si no, activo por defecto
+        const is_active = savedStates[userId] !== undefined ? savedStates[userId] : true;
+        
+        return {
+          ...u,
+          userId, // Guardar el ID único
+          is_active
+        };
+      });
+      
       setUsuarios(listaLimpia);
     } catch (error) {
       console.error("Error al conectar con el servidor", error);
       setUsuarios([]);
     }
     setCargando(false);
+  };
+
+  const toggleUserStatus = (index) => {
+    const updatedUsuarios = [...usuarios];
+    updatedUsuarios[index].is_active = !updatedUsuarios[index].is_active;
+    
+    // Guardar el estado en localStorage
+    const savedStates = JSON.parse(localStorage.getItem('usuariosEstados') || '{}');
+    const userId = updatedUsuarios[index].userId;
+    savedStates[userId] = updatedUsuarios[index].is_active;
+    localStorage.setItem('usuariosEstados', JSON.stringify(savedStates));
+    
+    setUsuarios(updatedUsuarios);
   };
 
   const getMonthFromDate = (dateString) => {
@@ -144,7 +174,7 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Search and Filters Section */}
           <div className="p-6 border-b border-gray-200">
@@ -244,96 +274,102 @@ function App() {
               <p className="text-gray-500 text-sm mt-2">Intenta ajustar los filtros de búsqueda</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-hidden">
+              <table className="w-full table-fixed">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[8%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="w-[15%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Nombre
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Jefatura
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Gerencia
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Cargo
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Cumpleaños
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Estado
+                    <th className="w-[18%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="w-[16%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Jefatura
+                    </th>
+                    <th className="w-[16%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Gerencia
+                    </th>
+                    <th className="w-[17%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Cargo
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {sortedUsuarios.map((u, i) => (
-                    <tr key={i} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {u.nombre === "[]" ? "" : u.nombre} {u.apellido === "[]" ? "" : u.apellido}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          <UserCircle className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">
-                            {u.jefatura && u.jefatura !== "[]" ? u.jefatura : "-"}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          <Building2 className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">
-                            {u.gerencia && u.gerencia !== "[]" ? u.gerencia : "-"}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          <Briefcase className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">
-                            {u.cargo === "[]" ? "Colaborador" : u.cargo}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          <Mail className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">
-                            {u.email === "[]" ? "Sin correo" : u.email}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {u.cumpleanos && u.cumpleanos !== "" && u.cumpleanos !== "[]" ? (
-                          <div className="flex items-center space-x-2">
-                            <Cake className="w-4 h-4 text-blue-600" />
-                            <span className="text-sm text-gray-900">{u.cumpleanos}</span>
+                  {sortedUsuarios.map((u, i) => {
+                    // Encontrar el índice original en el array de usuarios
+                    const originalIndex = usuarios.findIndex(user => user.userId === u.userId);
+                    
+                    return (
+                      <tr key={i} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-3 py-4">
+                          <button
+                            onClick={() => toggleUserStatus(originalIndex)}
+                            className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors cursor-pointer hover:opacity-80 ${
+                              u.is_active
+                                ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                            }`}
+                          >
+                            {u.is_active ? 'Activo' : 'Inactivo'}
+                          </button>
+                        </td>
+                        <td className="px-3 py-4">
+                          <div className="text-sm font-medium text-gray-900 truncate">
+                            {u.nombre === "[]" ? "" : u.nombre} {u.apellido === "[]" ? "" : u.apellido}
                           </div>
-                        ) : (
-                          <span className="text-sm text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            u.is_active
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {u.is_active ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-3 py-4">
+                          {u.cumpleanos && u.cumpleanos !== "" && u.cumpleanos !== "[]" ? (
+                            <div className="flex items-center space-x-1">
+                              <Cake className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                              <span className="text-sm text-gray-900 whitespace-nowrap">{u.cumpleanos}</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-4">
+                          <div className="flex items-center space-x-1">
+                            <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-600 truncate">
+                              {u.email === "[]" ? "Sin correo" : u.email}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-4">
+                          <div className="flex items-center space-x-1">
+                            <UserCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-600 truncate">
+                              {u.jefatura && u.jefatura !== "[]" ? u.jefatura : "-"}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-4">
+                          <div className="flex items-center space-x-1">
+                            <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-600 truncate">
+                              {u.gerencia && u.gerencia !== "[]" ? u.gerencia : "-"}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-4">
+                          <div className="flex items-center space-x-1">
+                            <Briefcase className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-600 truncate">
+                              {u.cargo === "[]" ? "Colaborador" : u.cargo}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
