@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Search, Users, Mail, Briefcase, Cake, Calendar, Building2, UserCircle } from 'lucide-react';
+import { Search, Users, Mail, Briefcase, Cake, Calendar, Building2, UserCircle, Send } from 'lucide-react';
 
 function App() {
   const [usuarios, setUsuarios] = useState([]);
   const [busqueda, setBusqueda] = useState('');
   const [filterMonth, setFilterMonth] = useState('');
-  const [filterStatus, setFilterStatus] = useState('todos');
   const [cargando, setCargando] = useState(false);
 
-  // Cargar todos los usuarios al iniciar
+  // ESTADOS PARA SELECCIÓN: Ahora guardamos objetos { email, nombre }
+  const [seleccionados, setSeleccionados] = useState([]);
+  const [enviando, setEnviando] = useState(false);
+
   useEffect(() => {
     fetchUsuarios();
   }, []);
@@ -19,24 +21,12 @@ function App() {
       const response = await fetch(`http://127.0.0.1:8000/api/usuarios/?q=${busqueda.trim()}`);
       const data = await response.json();
       
-      // Cargar estados guardados del localStorage
-      const savedStates = JSON.parse(localStorage.getItem('usuariosEstados') || '{}');
-      
       const listaLimpia = (data.trabajadores || []).filter(
         u => u && u.nombre && u.nombre !== "" && u.nombre !== "[]" && u.nombre !== "No registrado"
-      ).map(u => {
-        // Crear un identificador único para cada usuario
-        const userId = `${u.nombre}_${u.apellido}_${u.email}`;
-        
-        // Si existe un estado guardado, usarlo; si no, activo por defecto
-        const is_active = savedStates[userId] !== undefined ? savedStates[userId] : true;
-        
-        return {
+      ).map(u => ({
           ...u,
-          userId, // Guardar el ID único
-          is_active
-        };
-      });
+          userId: `${u.nombre}_${u.apellido}_${u.email}`
+      }));
       
       setUsuarios(listaLimpia);
     } catch (error) {
@@ -46,339 +36,202 @@ function App() {
     setCargando(false);
   };
 
-  const toggleUserStatus = (index) => {
-    const updatedUsuarios = [...usuarios];
-    updatedUsuarios[index].is_active = !updatedUsuarios[index].is_active;
+  // --- LÓGICA DE SELECCIÓN ---
+
+  const toggleSeleccion = (usuario) => {
+    const email = usuario.email;
+    if (!email || email === "[]" || email === "Sin correo") return;
     
-    // Guardar el estado en localStorage
-    const savedStates = JSON.parse(localStorage.getItem('usuariosEstados') || '{}');
-    const userId = updatedUsuarios[index].userId;
-    savedStates[userId] = updatedUsuarios[index].is_active;
-    localStorage.setItem('usuariosEstados', JSON.stringify(savedStates));
-    
-    setUsuarios(updatedUsuarios);
+    setSeleccionados(prev => {
+      const existe = prev.find(u => u.email === email);
+      if (existe) {
+        return prev.filter(u => u.email !== email);
+      } else {
+        // Guardamos el objeto para que el backend sepa el nombre del cumpleañero
+        return [...prev, { 
+          email: email, 
+          nombre: usuario.nombre 
+        }];
+      }
+    });
   };
+
+  const toggleSeleccionarTodo = () => {
+    const todosVisiblesValidos = sortedUsuarios
+        .filter(u => u.email && u.email !== "[]" && u.email !== "Sin correo")
+        .map(u => ({ email: u.email, nombre: u.nombre }));
+
+    const estanTodosSeleccionados = todosVisiblesValidos.length > 0 && 
+      todosVisiblesValidos.every(v => seleccionados.some(s => s.email === v.email));
+
+    if (estanTodosSeleccionados) {
+      setSeleccionados([]); 
+    } else {
+      setSeleccionados(todosVisiblesValidos);
+    }
+  };
+
+  const enviarCorreos = async () => {
+    if (seleccionados.length === 0) return;
+    if (!confirm(`¿Enviar saludo personalizado a las ${seleccionados.length} personas seleccionadas?`)) return;
+
+    setEnviando(true);
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/enviar-seleccionados/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Enviamos la clave "usuarios" que espera el backend
+        body: JSON.stringify({ usuarios: seleccionados })
+      });
+      const data = await response.json();
+      alert(data.mensaje);
+      
+      if (data.errores && data.errores.length > 0) {
+        console.error("Errores parciales:", data.errores);
+      }
+      setSeleccionados([]); 
+    } catch (error) {
+      alert("Error al intentar enviar los correos.");
+      console.error(error);
+    }
+    setEnviando(false);
+  };
+
+  // --- FUNCIONES DE FECHAS ---
 
   const getMonthFromDate = (dateString) => {
     if (!dateString || dateString === "" || dateString === "[]") return null;
-    try {
-      // Asume formato DD/MM o similar
-      const parts = dateString.split('/');
-      if (parts.length >= 2) {
-        return parseInt(parts[1], 10); // Retorna el mes
-      }
-    } catch (error) {
-      return null;
-    }
-    return null;
+    const parts = dateString.split('/');
+    return parts.length >= 2 ? parseInt(parts[1], 10) : null;
   };
 
-  const getDayFromDate = (dateString) => {
-    if (!dateString || dateString === "" || dateString === "[]") return null;
-    try {
-      const parts = dateString.split('/');
-      if (parts.length >= 1) {
-        return parseInt(parts[0], 10); // Retorna el día
-      }
-    } catch (error) {
-      return null;
-    }
-    return null;
-  };
-
-  // Función para calcular días hasta el próximo cumpleaños
   const getDaysUntilBirthday = (dateString) => {
-    if (!dateString || dateString === "" || dateString === "[]") return 999; // Los sin cumpleaños van al final
-
-    const day = getDayFromDate(dateString);
-    const month = getMonthFromDate(dateString);
+    if (!dateString || dateString === "" || dateString === "[]") return 999;
+    const parts = dateString.split('/');
+    if (parts.length < 2) return 999;
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
     
-    if (!day || !month) return 999;
-
     const today = new Date();
-    const currentYear = today.getFullYear();
-    
-    // Crear fecha del cumpleaños de este año
-    let birthday = new Date(currentYear, month - 1, day);
-    
-    // Si el cumpleaños ya pasó este año, usar el del próximo año
-    if (birthday < today) {
-      birthday = new Date(currentYear + 1, month - 1, day);
-    }
-    
-    // Calcular diferencia en días
-    const diffTime = birthday - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return diffDays;
+    let birthday = new Date(today.getFullYear(), month - 1, day);
+    if (birthday < today) birthday = new Date(today.getFullYear() + 1, month - 1, day);
+    return Math.ceil((birthday - today) / (1000 * 60 * 60 * 24));
   };
+
+  // --- FILTROS ---
 
   const filteredUsuarios = usuarios.filter(usuario => {
-    // Filtro por búsqueda (nombre, jefatura, gerencia)
-    const matchesSearch = 
-      busqueda.trim() === '' ||
-      (usuario.nombre && usuario.nombre.toLowerCase().includes(busqueda.toLowerCase())) ||
-      (usuario.apellido && usuario.apellido.toLowerCase().includes(busqueda.toLowerCase())) ||
-      (usuario.jefatura && usuario.jefatura.toLowerCase().includes(busqueda.toLowerCase())) ||
-      (usuario.gerencia && usuario.gerencia.toLowerCase().includes(busqueda.toLowerCase()));
-    // Filtro por mes
+    const matchesSearch = busqueda.trim() === '' ||
+      usuario.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
+      usuario.apellido?.toLowerCase().includes(busqueda.toLowerCase()) ||
+      usuario.jefatura?.toLowerCase().includes(busqueda.toLowerCase());
+    
     const matchesMonth = !filterMonth || getMonthFromDate(usuario.cumpleanos)?.toString() === filterMonth;
-    // Filtro por estado activo/inactivo
-    const matchesStatus = 
-      filterStatus === 'todos' || 
-      (filterStatus === 'activo' && usuario.is_active === true) ||
-      (filterStatus === 'inactivo' && usuario.is_active === false);
-
-    return matchesSearch && matchesMonth && matchesStatus;
+    return matchesSearch && matchesMonth;
   });
 
-  // Ordenar por cumpleaños más cercano
-  const sortedUsuarios = [...filteredUsuarios].sort((a, b) => {
-    return getDaysUntilBirthday(a.cumpleanos) - getDaysUntilBirthday(b.cumpleanos);
-  });
+  const sortedUsuarios = [...filteredUsuarios].sort((a, b) => 
+    getDaysUntilBirthday(a.cumpleanos) - getDaysUntilBirthday(b.cumpleanos)
+  );
 
   const months = [
-    { value: '1', label: 'Enero' },
-    { value: '2', label: 'Febrero' },
-    { value: '3', label: 'Marzo' },
-    { value: '4', label: 'Abril' },
-    { value: '5', label: 'Mayo' },
-    { value: '6', label: 'Junio' },
-    { value: '7', label: 'Julio' },
-    { value: '8', label: 'Agosto' },
-    { value: '9', label: 'Septiembre' },
-    { value: '10', label: 'Octubre' },
-    { value: '11', label: 'Noviembre' },
-    { value: '12', label: 'Diciembre' },
+    { value: '1', label: 'Enero' }, { value: '2', label: 'Febrero' }, { value: '3', label: 'Marzo' },
+    { value: '4', label: 'Abril' }, { value: '5', label: 'Mayo' }, { value: '6', label: 'Junio' },
+    { value: '7', label: 'Julio' }, { value: '8', label: 'Agosto' }, { value: '9', label: 'Septiembre' },
+    { value: '10', label: 'Octubre' }, { value: '11', label: 'Noviembre' }, { value: '12', label: 'Diciembre' },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="bg-blue-600 p-2 rounded-lg">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">CMF Cumpleaños</h1>
-                <p className="text-sm text-gray-600">Busca y encuentra información de empleados</p>
-              </div>
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="bg-blue-600 p-2 rounded-lg"><Users className="w-6 h-6 text-white" /></div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">CMF Cumpleaños</h1>
+              <p className="text-sm text-gray-600">Gestión de saludos corporativos</p>
             </div>
           </div>
+
+          {seleccionados.length > 0 && (
+            <button 
+              onClick={enviarCorreos}
+              disabled={enviando}
+              className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-md transition-all"
+            >
+              <Send className="w-4 h-4" />
+              <span>{enviando ? 'Enviando...' : `Enviar a ${seleccionados.length} seleccionados`}</span>
+            </button>
+          )}
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* Search and Filters Section */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="space-y-4">
-              {/* Search and Button Row */}
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Buscar por nombre, jefatura o gerencia."
-                    value={busqueda}
-                    onChange={(e) => setBusqueda(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && fetchUsuarios()}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <button
-                  onClick={fetchUsuarios}
-                  disabled={cargando}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                >
-                  {cargando ? 'Buscando...' : 'Buscar'}
-                </button>
-              </div>
-
-              {/* Filters Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Month Filter */}
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <select
-                    value={filterMonth}
-                    onChange={(e) => setFilterMonth(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
-                  >
-                    <option value="">Todos los meses</option>
-                    {months.map(month => (
-                      <option key={month.value} value={month.value}>{month.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Status Filter */}
-                <div className="flex items-center space-x-6 px-4 py-2 border border-gray-300 rounded-lg bg-white">
-                  <span className="text-sm font-medium text-gray-700">Estado:</span>
-                  <div className="flex items-center space-x-4">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="status"
-                        value="todos"
-                        checked={filterStatus === 'todos'}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">Todos</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="status"
-                        value="activo"
-                        checked={filterStatus === 'activo'}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">Activo</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="status"
-                        value="inactivo"
-                        checked={filterStatus === 'inactivo'}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">Inactivo</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
+      <main className="max-w-[90%] mx-auto py-8">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="p-6 border-b border-gray-200 flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Buscar empleado..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && fetchUsuarios()}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
             </div>
+            <select
+              value={filterMonth}
+              onChange={(e) => setFilterMonth(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg bg-white"
+            >
+              <option value="">Todos los meses</option>
+              {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+            <button onClick={fetchUsuarios} className="px-6 py-2 bg-blue-600 text-white rounded-lg">Buscar</button>
           </div>
 
-          {/* Results Section */}
-          {cargando ? (
-            <div className="p-12 text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <p className="mt-4 text-gray-600">Cargando empleados...</p>
-            </div>
-          ) : sortedUsuarios.length === 0 ? (
-            <div className="p-12 text-center">
-              <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600 text-lg">No se encontraron resultados</p>
-              <p className="text-gray-500 text-sm mt-2">Intenta ajustar los filtros de búsqueda</p>
-            </div>
-          ) : (
-            <div className="overflow-hidden">
-              <table className="w-full table-fixed">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="w-[6%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Estado
-                    </th>
-                    <th className="w-[18%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Nombre
-                    </th>
-                    <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Cumpleaños
-                    </th>
-                    <th className="w-[15%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="w-[16%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Jefatura
-                    </th>
-                    <th className="w-[16%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Gerencia
-                    </th>
-                    <th className="w-[20%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Cargo
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {sortedUsuarios.map((u, i) => {
-                    // Encontrar el índice original en el array de usuarios
-                    const originalIndex = usuarios.findIndex(user => user.userId === u.userId);
-                    
-                    return (
-                      <tr key={i} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-3 py-4">
-                          <button
-                            onClick={() => toggleUserStatus(originalIndex)}
-                            className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors cursor-pointer hover:opacity-80 ${
-                              u.is_active
-                                ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                            }`}
-                          >
-                            {u.is_active ? 'Activo' : 'Inactivo'}
-                          </button>
-                        </td>
-                        <td className="px-3 py-4">
-                          <div className="text-sm font-medium text-gray-900 truncate">
-                            {u.nombre === "[]" ? "" : u.nombre} {u.apellido === "[]" ? "" : u.apellido}
-                          </div>
-                        </td>
-                        <td className="px-3 py-4">
-                          {u.cumpleanos && u.cumpleanos !== "" && u.cumpleanos !== "[]" ? (
-                            <div className="flex items-center space-x-1">
-                              <Cake className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                              <span className="text-sm text-gray-900 whitespace-nowrap">{u.cumpleanos}</span>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-4">
-                          <div className="flex items-center space-x-1">
-                            <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            <span className="text-sm text-gray-600 truncate">
-                              {u.email === "[]" ? "Sin correo" : u.email}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-3 py-4">
-                          <div className="flex items-center space-x-1">
-                            <UserCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            <span className="text-sm text-gray-600 truncate">
-                              {u.jefatura && u.jefatura !== "[]" ? u.jefatura : "-"}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-3 py-4">
-                          <div className="flex items-center space-x-1">
-                            <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            <span className="text-sm text-gray-600 truncate">
-                              {u.gerencia && u.gerencia !== "[]" ? u.gerencia : "-"}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-3 py-4">
-                          <div className="flex items-center space-x-1">
-                            <Briefcase className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            <span className="text-sm text-gray-600 truncate">
-                              {u.cargo === "[]" ? "Colaborador" : u.cargo}
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                <tr>
+                  <th className="px-6 py-3 text-center">
+                    <input 
+                      type="checkbox" 
+                      onChange={toggleSeleccionarTodo}
+                      checked={seleccionados.length > 0 && seleccionados.length === sortedUsuarios.filter(u => u.email && u.email !== "Sin correo").length}
+                    />
+                  </th>
+                  <th className="px-6 py-3">Nombre</th>
+                  <th className="px-6 py-3">Cumpleaños</th>
+                  <th className="px-6 py-3">Email</th>
+                  <th className="px-6 py-3">Gerencia</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {sortedUsuarios.map((u, i) => {
+                  const tieneCorreo = u.email && u.email !== "Sin correo";
+                  const estaSeleccionado = seleccionados.some(s => s.email === u.email);
 
-          {/* Footer */}
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-            <p className="text-sm text-gray-600">
-              Total: <span className="font-medium">{sortedUsuarios.length}</span> empleado(s)
-              {(busqueda || filterMonth || filterStatus !== 'todos') ? ' (filtrado)' : ''}
-            </p>
+                  return (
+                    <tr key={i} className={estaSeleccionado ? 'bg-blue-50' : ''}>
+                      <td className="px-6 py-4 text-center">
+                        <input 
+                          type="checkbox" 
+                          disabled={!tieneCorreo}
+                          checked={estaSeleccionado}
+                          onChange={() => toggleSeleccion(u)}
+                        />
+                      </td>
+                      <td className="px-6 py-4 font-medium">{u.nombre} {u.apellido}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{u.cumpleanos || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{u.email}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{u.gerencia}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       </main>
