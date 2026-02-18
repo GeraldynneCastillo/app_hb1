@@ -1,34 +1,49 @@
-import { useState, useEffect } from 'react';
-import { 
-  Search, Users, Mail, Briefcase, Cake, 
-  Calendar, Building2, UserCircle, Send 
-} from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Send } from 'lucide-react';
+import MainLayout from './components/layout/MainLayout';
+import DashboardHeader from './components/dashboard/DashboardHeader';
+import BentoGrid from './components/dashboard/BentoGrid';
+import MonthFilter from './components/dashboard/MonthFilter';
+import FilterBar from './components/dashboard/FilterBar';
+import { getBirthdayStatusStrict, getCurrentMonthIndex, getMonthIndexFromDate } from './utils/dateUtils';
+import { motion } from 'framer-motion';
 
 function App() {
+  // Estado para datos y UI
   const [usuarios, setUsuarios] = useState([]);
-  const [busqueda, setBusqueda] = useState('');
-  const [filterMonth, setFilterMonth] = useState('');
+  const [filterMonth, setFilterMonth] = useState('todos');
   const [cargando, setCargando] = useState(false);
   const [seleccionados, setSeleccionados] = useState([]);
   const [enviando, setEnviando] = useState(false);
 
+  // Estados para nuevos filtros
+  const [busqueda, setBusqueda] = useState('');
+  const [filtros, setFiltros] = useState({
+    cargo: '',
+    gerencia: '',
+    jefatura: ''
+  });
+
+  // Cargar usuarios al inicio
   useEffect(() => {
     fetchUsuarios();
   }, []);
 
+  // Función asíncrona para obtener datos
   const fetchUsuarios = async () => {
     setCargando(true);
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/usuarios/?q=${busqueda.trim()}`);
+      // Nota: La búsqueda del backend podría usarse, pero aquí filtraremos en cliente también
+      const response = await fetch(`http://127.0.0.1:8000/api/usuarios/?q=`);
       const data = await response.json();
-      
+
       const listaLimpia = (data.trabajadores || []).filter(
         u => u && u.nombre && u.nombre !== "" && u.nombre !== "[]" && u.nombre !== "No registrado"
       ).map(u => ({
-          ...u,
-          userId: `${u.nombre}_${u.apellido}_${u.email}`
+        ...u,
+        userId: `${u.nombre}_${u.apellido}_${u.email}`
       }));
-      
+
       setUsuarios(listaLimpia);
     } catch (error) {
       console.error("Error al conectar con el servidor", error);
@@ -37,11 +52,132 @@ function App() {
     setCargando(false);
   };
 
+  // --- LÓGICA DE FILTRADO Y PROCESAMIENTO ---
+
+  // Obtener opciones únicas para los dropdowns
+  const opcionesFiltro = useMemo(() => {
+    const unicos = (key) => [...new Set(usuarios.map(u => u[key]).filter(Boolean))].sort();
+    return {
+      cargos: unicos('cargo'),
+      gerencias: unicos('gerencia'),
+      jefaturas: unicos('jefatura')
+    };
+  }, [usuarios]);
+
+  // Manejar cambio en filtros
+  const handleFilterChange = (key, value) => {
+    setFiltros(prev => ({ ...prev, [key]: value }));
+  };
+
+  // 1. LISTA "HOY" (Independiente de filtros)
+  // Muestra SIEMPRE los cumpleaños de hoy, sin importar qué mes se esté viendo
+  const usersToday = useMemo(() => {
+    return usuarios.filter(u => getBirthdayStatusStrict(u.cumpleanos) === 'today');
+  }, [usuarios]);
+
+  // Auto-seleccionar mes actual si hay cumpleaños este mes y no se ha interactuado
+  useEffect(() => {
+    if (usuarios.length > 0 && !cargando) {
+      // Si hay cumpleaños hoy, o en el mes actual, se podría preseleccionar.
+      // El requerimiento dice: "Si hay cumpleaños en el mes actual → seleccionar ese mes autom. Si no → 'todos'"
+      const currentMonthIndex = getCurrentMonthIndex(); // 0-11
+      const hasBirthdaysThisMonth = usuarios.some(u => getMonthIndexFromDate(u.cumpleanos) === currentMonthIndex);
+
+      if (hasBirthdaysThisMonth) {
+        setFilterMonth(currentMonthIndex.toString());
+      } else {
+        setFilterMonth("todos");
+      }
+    }
+  }, [usuarios.length, cargando]);
+
+
+  // 2. LISTA FILTRADA (Para el resto de secciones)
+  const filteredUsuarios = useMemo(() => {
+    return usuarios.filter(usuario => {
+      // 0. EXCLUSIÓN DE CUMPLEAÑOS DE HOY
+      // Los que cumplen hoy ya tienen su sección dedicada. No deben aparecer en búsquedas ni listados futuros.
+      if (getBirthdayStatusStrict(usuario.cumpleanos) === 'today') return false;
+
+      // A. Filtro de Texto (Nombre, Apellido) - Case insensitive
+      const searchLower = busqueda.toLowerCase().trim();
+      const matchesSearch = searchLower === '' ||
+        usuario.nombre?.toLowerCase().includes(searchLower) ||
+        usuario.apellido?.toLowerCase().includes(searchLower);
+
+      // B. Filtro de Mes (Puede ser "todos" o un número "0".."11")
+      const userMonthIndex = getMonthIndexFromDate(usuario.cumpleanos);
+      const matchesMonth = filterMonth === "todos" || userMonthIndex.toString() === filterMonth;
+
+      // C. Filtros Dropdowns
+      const matchesCargo = !filtros.cargo || usuario.cargo === filtros.cargo;
+      const matchesGerencia = !filtros.gerencia || usuario.gerencia === filtros.gerencia;
+      const matchesJefatura = !filtros.jefatura || usuario.jefatura === filtros.jefatura;
+
+      return matchesSearch && matchesMonth && matchesCargo && matchesGerencia && matchesJefatura;
+    });
+  }, [usuarios, busqueda, filterMonth, filtros]);
+
+
+  // Clasificación por Secciones para el BentoGrid
+  const usersByStatus = useMemo(() => {
+    // Si estamos viendo "todos", usamos la lógica de semanas
+    // Si estamos viendo un mes específico, mostramos todo plano o agrupado por día
+
+    // Estructura base
+    const groups = {
+      today: usersToday, // Siempre viene de la lista separada
+      week1: [],
+      week2: [],
+      week3: [],
+      future: [],
+      past: []
+    };
+
+    filteredUsuarios.forEach(u => {
+      // Excluir los que ya están en "today" para no duplicar visualmente en otras secciones
+      // (Opcional, pero se ve mejor si no se repiten)
+      if (getBirthdayStatusStrict(u.cumpleanos) === 'today') return;
+
+      const status = getBirthdayStatusStrict(u.cumpleanos);
+
+      // Si el filtro es "todos", respetamos la lógica de semanas relativa a HOY
+      // Si el filtro es un mes específico, tal vez queramos ver todo el mes junto.
+      // Por consistencia con el pedido "Todos -> Enero -> Febrero", trataremos de agrupar.
+
+      if (status === 'past') {
+        groups.past.push(u);
+      } else if (status === 'week1') {
+        groups.week1.push(u);
+      } else if (status === 'week2') {
+        groups.week2.push(u);
+      } else if (status === 'week3') {
+        groups.week3.push(u);
+      } else {
+        // 'future' o 'unknown'
+        groups.future.push(u);
+      }
+    });
+
+    // Ordenar por día dentro de cada grupo
+    const sortByDay = (a, b) => {
+      const dayA = parseInt(a.cumpleanos.split('/')[0]) || 0;
+      const dayB = parseInt(b.cumpleanos.split('/')[0]) || 0;
+      return dayA - dayB;
+    };
+
+    Object.keys(groups).forEach(key => {
+      groups[key].sort(sortByDay);
+    });
+
+    return groups;
+  }, [filteredUsuarios, usersToday]);
+
   // --- LÓGICA DE SELECCIÓN ---
   const toggleSeleccion = (usuario) => {
     const email = usuario.email;
     if (!email || email === "[]" || email === "Sin correo") return;
-    
+
     setSeleccionados(prev => {
       const existe = prev.find(u => u.email === email);
       if (existe) {
@@ -50,21 +186,6 @@ function App() {
         return [...prev, { email: email, nombre: usuario.nombre }];
       }
     });
-  };
-
-  const toggleSeleccionarTodo = () => {
-    const todosVisiblesValidos = sortedUsuarios
-        .filter(u => u.email && u.email !== "[]" && u.email !== "Sin correo")
-        .map(u => ({ email: u.email, nombre: u.nombre }));
-
-    const estanTodosSeleccionados = todosVisiblesValidos.length > 0 && 
-      todosVisiblesValidos.every(v => seleccionados.some(s => s.email === v.email));
-
-    if (estanTodosSeleccionados) {
-      setSeleccionados([]); 
-    } else {
-      setSeleccionados(todosVisiblesValidos);
-    }
   };
 
   const enviarCorreos = async () => {
@@ -80,193 +201,78 @@ function App() {
       });
       const data = await response.json();
       alert(data.mensaje);
-      setSeleccionados([]); 
+      setSeleccionados([]);
     } catch (error) {
       alert("Error al intentar enviar los correos.");
     }
     setEnviando(false);
   };
 
-  // --- FUNCIONES DE FECHAS ---
-  const getMonthFromDate = (dateString) => {
-    if (!dateString || dateString === "" || dateString === "[]") return null;
-    const parts = dateString.split('/');
-    return parts.length >= 2 ? parseInt(parts[1], 10) : null;
-  };
-
-  const getDaysUntilBirthday = (dateString) => {
-    if (!dateString || dateString === "" || dateString === "[]") return 999;
-    const parts = dateString.split('/');
-    if (parts.length < 2) return 999;
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10);
-    
-    const today = new Date();
-    let birthday = new Date(today.getFullYear(), month - 1, day);
-    if (birthday < today) birthday = new Date(today.getFullYear() + 1, month - 1, day);
-    return Math.ceil((birthday - today) / (1000 * 60 * 60 * 24));
-  };
-
-  // --- FILTROS ---
-  const filteredUsuarios = usuarios.filter(usuario => {
-    const matchesSearch = busqueda.trim() === '' ||
-      usuario.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
-      usuario.apellido?.toLowerCase().includes(busqueda.toLowerCase()) ||
-      usuario.jefatura?.toLowerCase().includes(busqueda.toLowerCase()) ||
-      usuario.cargo?.toLowerCase().includes(busqueda.toLowerCase());
-    
-    const matchesMonth = !filterMonth || getMonthFromDate(usuario.cumpleanos)?.toString() === filterMonth;
-    return matchesSearch && matchesMonth;
-  });
-
-  const sortedUsuarios = [...filteredUsuarios].sort((a, b) => 
-    getDaysUntilBirthday(a.cumpleanos) - getDaysUntilBirthday(b.cumpleanos)
-  );
-
-  const months = [
-    { value: '1', label: 'Enero' }, { value: '2', label: 'Febrero' }, { value: '3', label: 'Marzo' },
-    { value: '4', label: 'Abril' }, { value: '5', label: 'Mayo' }, { value: '6', label: 'Junio' },
-    { value: '7', label: 'Julio' }, { value: '8', label: 'Agosto' }, { value: '9', label: 'Septiembre' },
-    { value: '10', label: 'Octubre' }, { value: '11', label: 'Noviembre' }, { value: '12', label: 'Diciembre' },
-  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="bg-blue-600 p-2 rounded-lg"><Users className="w-6 h-6 text-white" /></div>
+    <MainLayout
+      headerActions={seleccionados.length > 0 && (
+        <motion.button
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          onClick={enviarCorreos}
+          disabled={enviando}
+          className="flex items-center space-x-3 bg-slate-900 text-white px-8 py-4 rounded-full shadow-2xl hover:bg-slate-800 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+        >
+          <Send className="w-5 h-5 text-blue-400" />
+          <span className="font-bold text-lg">
+            {enviando ? 'Enviando...' : `Saludar a ${seleccionados.length} personas`}
+          </span>
+        </motion.button>
+      )}
+    >
+      <div className="font-sans text-slate-800"> {/* Contenedor sin fondo para respetar el MainLayout */}
+        <DashboardHeader countToday={usersByStatus.today.length} />
+
+        {/* BARRA DE FILTROS Y NAVEGACIÓN */}
+        <div className="flex flex-col gap-6 mb-12">
+
+          <div className="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-slate-200 pb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">CMF Cumpleaños</h1>
-              <p className="text-sm text-gray-500 font-medium">Panel de Gestión</p>
+              <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Explorar Cumpleaños</h2>
+              <p className="text-slate-500 mt-1">Busca y filtra entre todos los colaboradores</p>
             </div>
+
+            {/* Filtro de Mes - Diseño Clean */}
+            <MonthFilter selectedMonth={filterMonth} onMonthChange={setFilterMonth} />
           </div>
 
-          {seleccionados.length > 0 && (
-            <button 
-              onClick={enviarCorreos}
-              disabled={enviando}
-              className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl shadow-lg transition-all transform active:scale-95"
-            >
-              <Send className="w-4 h-4" />
-              <span className="font-semibold">{enviando ? 'Enviando...' : `Saludar a ${seleccionados.length} personas`}</span>
-            </button>
-          )}
+          {/* Barra Horizontal de Filtros - Integrada */}
+          <FilterBar
+            search={busqueda}
+            onSearchChange={setBusqueda}
+            filters={filtros}
+            onFilterChange={handleFilterChange}
+            options={opcionesFiltro}
+          />
         </div>
-      </header>
 
-      <main className="max-w-[95%] mx-auto py-8">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* BARRA DE BÚSQUEDA Y FILTROS */}
-          <div className="p-6 bg-gray-50/50 border-b border-gray-200 flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Buscar por nombre, cargo o jefatura..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && fetchUsuarios()}
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-              />
-            </div>
-            <div className="flex gap-3">
-              <select
-                value={filterMonth}
-                onChange={(e) => setFilterMonth(e.target.value)}
-                className="px-4 py-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-700"
-              >
-                <option value="">Todos los meses</option>
-                {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-              </select>
-              <button 
-                onClick={fetchUsuarios} 
-                className="px-6 py-2.5 bg-gray-800 text-white font-semibold rounded-xl hover:bg-black transition-colors"
-              >
-                Refrescar
-              </button>
-            </div>
+        {cargando ? (
+          <div className="flex flex-col items-center justify-center py-32">
+            <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mb-6"></div>
+            <p className="text-slate-400 font-medium text-lg">Cargando directorio...</p>
           </div>
-
-          {/* TABLA DE RESULTADOS */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-100/50 text-xs uppercase text-gray-500 font-bold tracking-wider">
-                <tr>
-                  <th className="px-6 py-4 text-center w-16">
-                    <input 
-                      type="checkbox" 
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      onChange={toggleSeleccionarTodo}
-                      checked={seleccionados.length > 0 && seleccionados.length === sortedUsuarios.filter(u => u.email && u.email !== "Sin correo").length}
-                    />
-                  </th>
-                  <th className="px-6 py-4">Empleado</th>
-                  <th className="px-6 py-4">Cargo</th>
-                  <th className="px-6 py-4">Cumpleaños</th>
-                  <th className="px-6 py-4">Gerencia / Jefatura</th>
-                  <th className="px-6 py-4">Contacto</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {cargando ? (
-                  <tr><td colSpan="6" className="text-center py-20 text-gray-400">Cargando colaboradores...</td></tr>
-                ) : sortedUsuarios.length === 0 ? (
-                  <tr><td colSpan="6" className="text-center py-20 text-gray-400">No se encontraron resultados</td></tr>
-                ) : (
-                  sortedUsuarios.map((u, i) => {
-                    const tieneCorreo = u.email && u.email !== "Sin correo";
-                    const estaSeleccionado = seleccionados.some(s => s.email === u.email);
-
-                    return (
-                      <tr key={i} className={`hover:bg-blue-50/30 transition-colors ${estaSeleccionado ? 'bg-blue-50' : ''}`}>
-                        <td className="px-6 py-4 text-center">
-                          <input 
-                            type="checkbox" 
-                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            disabled={!tieneCorreo}
-                            checked={estaSeleccionado}
-                            onChange={() => toggleSeleccion(u)}
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-gray-800">{u.nombre} {u.apellido}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Briefcase className="w-4 h-4 mr-2 text-gray-400" />
-                            {u.cargo}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center text-sm font-medium text-blue-600">
-                            <Cake className="w-4 h-4 mr-2 text-pink-500" />
-                            {u.cumpleanos || 'No reg.'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-semibold text-gray-700">{u.gerencia}</div>
-                          <div className="text-xs text-gray-500 flex items-center mt-0.5">
-                            <UserCircle className="w-3 h-3 mr-1" />
-                            Jefe: {u.jefatura}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Mail className="w-4 h-4 mr-2" />
-                            {u.email}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </main>
-    </div>
+        ) : (
+          <BentoGrid
+            todayUsers={usersByStatus.today}
+            week1Users={usersByStatus.week1}
+            week2Users={usersByStatus.week2}
+            week3Users={usersByStatus.week3}
+            futureUsers={usersByStatus.future}
+            pastUsers={usersByStatus.past}
+            selectedUsers={seleccionados}
+            toggleSelection={toggleSeleccion}
+            sending={enviando}
+          />
+        )}
+      </div>
+    </MainLayout>
   );
 }
 
