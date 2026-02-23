@@ -18,8 +18,6 @@ function App() {
   const [filterMonth, setFilterMonth] = useState('todos');
   const [cargando, setCargando] = useState(false);
 
-
-
   // Estados para nuevos filtros
   const [busqueda, setBusqueda] = useState('');
   const [filtros, setFiltros] = useState({
@@ -27,10 +25,7 @@ function App() {
     jefatura: ''
   });
 
-  // Cargar usuarios al inicio
-  useEffect(() => {
-    fetchUsuarios();
-  }, []);
+
 
   // Función asíncrona para obtener datos
   const fetchUsuarios = async () => {
@@ -55,6 +50,12 @@ function App() {
     setCargando(false);
   };
 
+  // Cargar usuarios al inicio
+  useEffect(() => {
+    // eslint-disable-next-line
+    fetchUsuarios();
+  }, []);
+
   // --- LÓGICA DE FILTRADO Y PROCESAMIENTO ---
 
   const opcionesFiltro = useMemo(() => {
@@ -76,8 +77,6 @@ function App() {
   const usersPast = useMemo(() => {
     return usuarios.filter(u => getBirthdayStatusStrict(u.cumpleanos) === 'past');
   }, [usuarios]);
-
-  // El filtro de meses inicia en 'todos' por defecto (establecido en el useState)
 
   const hasActiveFilters = useMemo(() => {
     return busqueda.trim() !== '' ||
@@ -117,30 +116,20 @@ function App() {
     };
 
     if (!hasActiveFilters) {
-      // SIN FILTROS: Mostrar cumpleaños de hoy, esta semana y pasados.
       groups.today = usersToday;
       groups.past = usersPast;
       groups.week1 = usuarios.filter(u => getBirthdayStatusStrict(u.cumpleanos) === 'week1');
     } else {
-      // CON FILTROS: Ocultar hoy automáticamente, mostrar resultados en grupos (o plano si preferimos paginar global)
       filteredUsuarios.forEach(u => {
         const status = getBirthdayStatusStrict(u.cumpleanos);
 
-        if (status === 'past') {
-          groups.past.push(u);
-        } else if (status === 'week1' || status === 'today') {
-          // Agrupar los de 'today' que hacen match con los filtros dentro de 'week1' (Esta Semana) o una nueva sección si se prefiere.
-          // Para mantener la lógica limpia, lo metemos a week1 si es de esta semana, u omitimos la separación por completo.
-          groups.week1.push(u);
-        } else if (status === 'week2') {
-          groups.week2.push(u);
-        } else if (status === 'week3') {
-          groups.week3.push(u);
-        } else if (status === 'future') {
-          groups.future.push(u);
-        }
+        if (status === 'past') groups.past.push(u);
+        else if (status === 'week1' || status === 'today') groups.week1.push(u);
+        else if (status === 'week2') groups.week2.push(u);
+        else if (status === 'week3') groups.week3.push(u);
+        else if (status === 'future') groups.future.push(u);
 
-        groups.all_filtered.push(u); // Guardamos la colección plana filtrada
+        groups.all_filtered.push(u);
       });
     }
 
@@ -163,7 +152,7 @@ function App() {
     });
 
     return groups;
-  }, [filteredUsuarios, usersToday, usersPast, hasActiveFilters]);
+  }, [filteredUsuarios, usersToday, usersPast, hasActiveFilters, usuarios]);
 
 
 

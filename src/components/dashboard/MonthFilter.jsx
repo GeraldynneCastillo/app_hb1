@@ -1,7 +1,5 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
-import { motion } from 'framer-motion';
-
 const MonthFilter = ({ selectedMonth, onMonthChange }) => {
     const months = [
         { value: '0', label: 'Enero' }, { value: '1', label: 'Febrero' }, { value: '2', label: 'Marzo' },

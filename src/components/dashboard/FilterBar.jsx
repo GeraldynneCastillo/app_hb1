@@ -12,7 +12,7 @@ const FilterBar = ({
     const commonStyles = "w-full bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all";
 
     return (
-        <div className="flex flex-col lg:flex-row gap-4 mb-8 items-start lg:items-center w-full"> {/* Removed container background/shadow */}
+        <div className="flex flex-col lg:flex-row gap-4 mb-8 items-start lg:items-center w-full">
             {/* Input de Búsqueda */}
             <div className="relative flex-[2] w-full lg:w-auto min-w-[200px]">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -26,8 +26,6 @@ const FilterBar = ({
                     onChange={(e) => onSearchChange(e.target.value)}
                 />
             </div>
-
-
 
             {/* Filtro Gerencia */}
             <div className="relative w-full lg:w-40 flex-shrink-0">

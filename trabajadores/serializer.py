@@ -20,7 +20,6 @@ class TrabajadorResumenSerializer(serializers.ModelSerializer):
 
 class TrabajadorSerializer(serializers.ModelSerializer):
     """Serializer principal que conecta Jefatura y Gerencia."""
-    # Lectura: Objetos completos para React
     gerencia_info = DepartamentoSerializer(source='departamento', read_only=True)
     jefe_directo = TrabajadorResumenSerializer(source='reporta_a', read_only=True)
     equipo_a_cargo = TrabajadorResumenSerializer(source='subordinados', many=True, read_only=True)

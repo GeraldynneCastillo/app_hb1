@@ -1,5 +1,5 @@
 
-import { format, differenceInDays, isSameDay, setYear, isAfter, isBefore, startOfDay } from 'date-fns';
+import { format, differenceInDays, isSameDay, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 // Parsea la fecha de cumpleaños (DD/MM). 
@@ -29,10 +29,7 @@ export const getMonthIndexFromDate = (dateString) => {
     return parts.length >= 2 ? parseInt(parts[1], 10) - 1 : -1;
 };
 
-// Obtiene el mes actual como string indexado (0-11)
-export const getCurrentMonthIndex = () => {
-    return new Date().getMonth();
-}
+
 
 // Obtiene el estado del cumpleaños con lógica estricta por semanas
 export const getBirthdayStatusStrict = (dateString) => {
@@ -67,10 +64,7 @@ export const getBirthdayStatusStrict = (dateString) => {
     return 'future';
 };
 
-// Formatea la fecha para mostrar en UI (ej: "12 de Febrero")
-export const formatDate = (date) => {
-    return format(date, "d 'de' MMMM", { locale: es });
-}
+
 
 // Formatea fecha completa para Header (ej: "Martes 18/02/2026")
 export const formatCurrentDate = () => {
@@ -80,10 +74,4 @@ export const formatCurrentDate = () => {
     return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
-// Obtiene saludo según la hora
-export const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "¡Buenos días!";
-    if (hour < 18) return "¡Buenas tardes!";
-    return "¡Buenas noches!";
-}
+

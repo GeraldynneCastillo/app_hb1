@@ -5,7 +5,7 @@ import AppFooter from './AppFooter';
 
 const MainLayout = ({ children, headerActions }) => {
     return (
-        <div className="min-h-screen bg-slate-50 relative overflow-hidden font-sans selection:bg-pink-100 selection:text-pink-900 flex flex-col">
+        <div className="min-h-screen bg-slate-50 relative overflow-hidden font-sans flex flex-col">
             {/* Header principal con gradiente azul */}
             <AppHeader />
 

@@ -38,7 +38,7 @@ def enviar_correos_seleccionados(request):
     asunto = "🎂 ¡Feliz Cumpleaños!"
     remitente = settings.EMAIL_HOST_USER
     
-    # 1. Ruta al archivo GIF en tu carpeta static
+    #Ruta al archivo GIF
     ruta_gif = os.path.join(settings.BASE_DIR, 'static', 'cumple_indef.gif')
 
     enviados = 0
@@ -81,7 +81,7 @@ def enviar_correos_seleccionados(request):
                 msg.attach_alternative(html_content, "text/html")
                 msg.mixed_subtype = 'related'
 
-                # 3. Adjuntar el GIF usando MIMEBase para preservar la animación
+                #Adjuntar el GIF usando MIMEBase 
                 if os.path.exists(ruta_gif):
                     with open(ruta_gif, 'rb') as f:
                         part = MIMEBase('image', 'gif')

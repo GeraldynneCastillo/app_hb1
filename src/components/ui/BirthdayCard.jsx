@@ -1,12 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { motion } from 'framer-motion';
 import { Briefcase, User, Mail, Cake } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 // Utilidad para unir clases
-export function cn(...inputs) {
+function cn(...inputs) {
     return twMerge(clsx(inputs));
 }
 
@@ -14,17 +13,8 @@ const BirthdayCard = ({ user, status }) => {
     const isToday = status === 'today';
     const isPast = status === 'past';
 
-    const variants = {
-        hidden: { opacity: 0, y: 10 },
-        visible: { opacity: 1, y: 0 }
-    };
-
     return (
-        <motion.div
-            variants={variants}
-            initial="hidden"
-            animate="visible"
-            transition={{ type: "spring", stiffness: 300, damping: 24 }}
+        <div
             className={cn(
                 "group relative bg-white border border-slate-300 rounded-2xl p-5 shadow-lg transition-all duration-300 ease-out",
                 "hover:-translate-y-2 hover:shadow-2xl hover:border-blue-200",
@@ -78,7 +68,7 @@ const BirthdayCard = ({ user, status }) => {
                     </span>
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 };
 

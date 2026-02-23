@@ -5,18 +5,16 @@ import { formatCurrentDate } from '../../utils/dateUtils';
 const BentoGrid = ({
     todayUsers,
     week1Users,
-    week2Users,
-    week3Users,
-    futureUsers,
     pastUsers = [],
     allFilteredUsers = [],
     hasActiveFilters = false,
 }) => {
     const [currentPage, setCurrentPage] = useState(1);
-    const cardsPerPage = 20;
+    const cardsPerPage = 12; // 3x4 layout
 
     // Reiniciar página cuando cambian los filtros
     useEffect(() => {
+        // eslint-disable-next-line
         setCurrentPage(1);
     }, [allFilteredUsers]);
 
@@ -25,7 +23,6 @@ const BentoGrid = ({
 
     return (
         <div className="space-y-12 pb-20">
-
             {hasActiveFilters ? (
                 // --- VISTA CON FILTROS ACTIVOS (Lista Plana Paginada) ---
                 <section>
@@ -35,7 +32,7 @@ const BentoGrid = ({
 
                     {allFilteredUsers.length > 0 ? (
                         <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {allFilteredUsers.slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage).map((user) => (
                                     <BirthdayCard
                                         key={user.userId || user.email}
@@ -84,7 +81,7 @@ const BentoGrid = ({
                         </div>
 
                         {todayUsers.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {todayUsers.map((user) => (
                                     <BirthdayCard
                                         key={user.userId || user.email}
@@ -105,7 +102,7 @@ const BentoGrid = ({
                             <h2 className="text-xl font-bold text-slate-700 flex items-center gap-3 mb-6">
                                 📅 Esta Semana
                             </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {week1Users.map((user) => (
                                     <BirthdayCard
                                         key={user.userId || user.email}
@@ -122,7 +119,7 @@ const BentoGrid = ({
                             <h2 className="text-lg font-bold text-slate-400 mb-6 flex items-center gap-3">
                                 🕓 Cumpleaños Pasados
                             </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {pastUsers.map((user) => (
                                     <BirthdayCard
                                         key={user.userId || user.email}
