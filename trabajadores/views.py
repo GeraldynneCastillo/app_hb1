@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.conf import settings
 from .ldap_helpers import buscar_usuario
-from email.mime.base import MIMEBase  # Cambiado para soportar GIF animado
-from email import encoders           # Necesario para codificar el GIF
+from email.mime.base import MIMEBase 
+from email import encoders          
 import os
 
 @api_view(['GET'])
@@ -53,7 +53,6 @@ def enviar_correos_seleccionados(request):
             nombre = usuario.get('nombre', 'Compañero/a')
             
             try:
-                # 2. HTML: El src="cid:gif_animado" debe coincidir con el ID de abajo
                 html_content = f"""
                 <html>
                     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; text-align: center;">

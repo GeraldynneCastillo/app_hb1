@@ -48,7 +48,11 @@ export const getBirthdayStatusStrict = (dateString) => {
     const diff = differenceInDays(birthdayDate, today);
 
     // Pasado en el año actual
-    if (diff < 0) return 'past';
+    if (diff < 0) {
+        // Solo mostrar hasta 2 días pasados
+        if (Math.abs(diff) <= 2) return 'past';
+        return 'too_past'; // Ocultar si es mayor a 2 días
+    }
 
     // Semana Actual: Próximos 7 días (Mañana -> Hoy + 7)
     if (diff >= 1 && diff <= 7) return 'week1';

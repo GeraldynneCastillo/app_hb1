@@ -1,27 +1,13 @@
-
-import React, { useState, useEffect } from 'react';
-import { getGreeting } from '../../utils/dateUtils';
+import React from 'react';
 
 const DashboardHeader = ({ countToday }) => {
-    const [greeting, setGreeting] = useState('');
-
-    useEffect(() => {
-        setGreeting(getGreeting());
-    }, []);
-
     return (
         <div className="mb-8">
-            <div className="flex items-center gap-4 mb-4">
-                <img
-                    src="/static/logo.png"
-                    alt="CMF Logo"
-                    className="h-16 w-auto object-contain drop-shadow-sm"
-                />
-            </div>
-
             <div>
                 <h1 className="text-4xl md:text-5xl font-bold text-slate-800 tracking-tight leading-tight">
-                    {greeting}
+                    {/* El Componente principal ya usa título de app, así que podemos simplificar aquí 
+                        o dejar un título de sección si es necesario. Según el plan, quitamos el saludo dinámico. 
+                    */}
                 </h1>
             </div>
         </div>

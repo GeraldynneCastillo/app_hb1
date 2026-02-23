@@ -14,7 +14,7 @@ const FilterBar = ({
     return (
         <div className="flex flex-col lg:flex-row gap-4 mb-8 items-start lg:items-center w-full"> {/* Removed container background/shadow */}
             {/* Input de Búsqueda */}
-            <div className="relative flex-grow w-full lg:w-auto min-w-[200px]">
+            <div className="relative flex-[2] w-full lg:w-auto min-w-[200px]">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Search className="h-4 w-4 text-slate-400" />
                 </div>
@@ -27,25 +27,10 @@ const FilterBar = ({
                 />
             </div>
 
-            {/* Filtro Cargo */}
-            <div className="relative w-full lg:w-auto min-w-[150px]">
-                <select
-                    value={filters.cargo}
-                    onChange={(e) => onFilterChange('cargo', e.target.value)}
-                    className={`${commonStyles} pl-3 pr-8 py-2.5 appearance-none cursor-pointer`}
-                >
-                    <option value="">Cargo (Todos)</option>
-                    {options.cargos.map((c, i) => (
-                        <option key={i} value={c}>{c}</option>
-                    ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <Filter className="h-3 w-3 text-slate-400" />
-                </div>
-            </div>
+
 
             {/* Filtro Gerencia */}
-            <div className="relative w-full lg:w-auto min-w-[150px]">
+            <div className="relative w-full lg:w-40 flex-shrink-0">
                 <select
                     value={filters.gerencia}
                     onChange={(e) => onFilterChange('gerencia', e.target.value)}
@@ -56,10 +41,13 @@ const FilterBar = ({
                         <option key={i} value={g}>{g}</option>
                     ))}
                 </select>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <Filter className="h-3 w-3 text-slate-400" />
+                </div>
             </div>
 
             {/* Filtro Jefatura */}
-            <div className="relative w-full lg:w-auto min-w-[150px]">
+            <div className="relative w-full lg:w-40 flex-shrink-0">
                 <select
                     value={filters.jefatura}
                     onChange={(e) => onFilterChange('jefatura', e.target.value)}
@@ -70,6 +58,9 @@ const FilterBar = ({
                         <option key={i} value={j}>{j}</option>
                     ))}
                 </select>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <Filter className="h-3 w-3 text-slate-400" />
+                </div>
             </div>
         </div>
     );

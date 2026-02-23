@@ -1,26 +1,23 @@
 """
-Django settings for app_cumple project.
+Configuraciones de Django para el proyecto app_cumple.
 """
 
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-wj6)-ghfve9ziy+3kma@boi-=q5ky&h0xw4o@$*(6$cffp!3zl'
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# 1. Agregamos localhost y la IP local a los hosts permitidos
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+# Se agregan localhost y la IP de red para permitir el acceso desde otros equipos
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '172.19.7.106', '0.0.0.0']
 
 
-# Application definition
+# Definición de la aplicación
 
 INSTALLED_APPS = [
-    'corsheaders',  # Debe estar aquí
+    'corsheaders',  # Manejo de intercambio de recursos de origen cruzado
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -31,10 +28,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # <--- DEBE IR LO MÁS ARRIBA POSIBLE
+    'corsheaders.middleware.CorsMiddleware',  
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',  # CorsMiddleware debe ir antes que este
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -61,7 +58,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'app_cumple.wsgi.application'
 
 
-# Database
+# Base de datos
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -70,7 +67,7 @@ DATABASES = {
 }
 
 
-# Password validation
+# Validación de contraseñas
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -79,10 +76,9 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-LANGUAGE_CODE = 'es-cl' # Cambiado a español de Chile por comodidad
+LANGUAGE_CODE = 'es-cl' 
 
-TIME_ZONE = 'America/Santiago' # Ajustado a tu zona horaria
+TIME_ZONE = 'America/Santiago' 
 
 USE_I18N = True
 
@@ -90,15 +86,13 @@ USE_TZ = True
 
 
 # --- CONFIGURACIÓN DE CORS ---
-# Esto permite que tu React (puerto 5173) hable con Django (puerto 8000)
 CORS_ALLOW_ALL_ORIGINS = True 
 CORS_ALLOW_CREDENTIALS = True
 
 
-# Static files (CSS, JavaScript, Images)
+# Archivos estáticos (CSS, JavaScript, Imágenes)
 STATIC_URL = 'static/'
 
-# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
