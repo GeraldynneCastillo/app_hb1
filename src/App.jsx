@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import MainLayout from './components/layout/MainLayout';
 import BentoGrid from './components/dashboard/BentoGrid';
-import MonthFilter from './components/dashboard/MonthFilter';
 import FilterBar from './components/dashboard/FilterBar';
 import { getBirthdayStatusStrict, getMonthIndexFromDate } from './utils/dateUtils';
 
@@ -165,7 +164,6 @@ function App() {
               <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Cumpleaños</h2>
               <p className="text-slate-500 mt-1">Busca y filtra entre todos los colaboradores</p>
             </div>
-            <MonthFilter selectedMonth={filterMonth} onMonthChange={setFilterMonth} />
           </div>
 
           <FilterBar
@@ -174,6 +172,8 @@ function App() {
             filters={filtros}
             onFilterChange={handleFilterChange}
             options={opcionesFiltro}
+            selectedMonth={filterMonth}
+            onMonthChange={setFilterMonth}
           />
         </div>
 

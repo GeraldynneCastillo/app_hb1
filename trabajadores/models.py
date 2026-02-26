@@ -22,7 +22,6 @@ class Trabajador(models.Model):
     cargo = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     telefono = models.CharField(max_length=20, blank=True)
-    foto = models.ImageField(upload_to='trabajadores/', blank=True, null=True)
     cuenta_activa = models.BooleanField(default=True)
     
     # Relación con Gerencia

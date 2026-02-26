@@ -13,7 +13,7 @@ class TrabajadorResumenSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Trabajador
-        fields = ['id', 'nombre_completo', 'cargo', 'foto', 'email']
+        fields = ['id', 'nombre_completo', 'cargo', 'email']
 
     def get_nombre_completo(self, obj):
         return f"{obj.nombre} {obj.apellido}"
@@ -27,7 +27,7 @@ class TrabajadorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trabajador
         fields = [
-            'id', 'nombre', 'apellido', 'cargo', 'email', 'telefono', 
-            'foto', 'cuenta_activa', 'departamento', 'gerencia_info',
+            'id', 'nombre', 'apellido', 'cargo', 'email', 'telefono',
+            'cuenta_activa', 'departamento', 'gerencia_info',
             'reporta_a', 'jefe_directo', 'equipo_a_cargo'
         ]

@@ -1,12 +1,15 @@
 import React from 'react';
 import { Search, Filter } from 'lucide-react';
+import MonthFilter from './MonthFilter';
 
 const FilterBar = ({
     search,
     onSearchChange,
     filters,
     onFilterChange,
-    options
+    options,
+    selectedMonth,
+    onMonthChange
 }) => {
     // Estilos comunes para inputs y selects
     const commonStyles = "w-full bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all";
@@ -26,6 +29,9 @@ const FilterBar = ({
                     onChange={(e) => onSearchChange(e.target.value)}
                 />
             </div>
+
+            {/* Filtro de Mes */}
+            <MonthFilter selectedMonth={selectedMonth} onMonthChange={onMonthChange} />
 
             {/* Filtro Gerencia */}
             <div className="relative w-full lg:w-40 flex-shrink-0">
