@@ -158,14 +158,7 @@ function App() {
   return (
     <MainLayout>
       <div className="font-sans text-slate-800">
-        <div className="flex flex-col gap-6 mb-4 mt-0">
-          <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-slate-200 pb-4">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Cumpleaños</h2>
-              <p className="text-slate-500 mt-1">Busca y filtra entre todos los colaboradores</p>
-            </div>
-          </div>
-
+        <div className="flex flex-col gap-8 mb-6 mt-8">
           <FilterBar
             search={busqueda}
             onSearchChange={setBusqueda}

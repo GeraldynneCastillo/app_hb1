@@ -8,13 +8,14 @@ const MonthFilter = ({ selectedMonth, onMonthChange }) => {
         { value: '9', label: 'Octubre' }, { value: '10', label: 'Noviembre' }, { value: '11', label: 'Diciembre' },
     ];
 
+    const commonStyles = "w-full bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all";
+
     return (
-        <div className="flex items-center bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 transition-all w-full md:w-auto min-w-[240px]">
-            <Calendar className="w-5 h-5 text-slate-400 mr-3" />
+        <div className="relative w-full lg:w-40 flex-shrink-0">
             <select
                 value={selectedMonth}
                 onChange={(e) => onMonthChange(e.target.value)}
-                className="w-full bg-transparent border-none text-slate-700 font-medium text-sm focus:ring-0 cursor-pointer outline-none"
+                className={`${commonStyles} pl-3 pr-8 py-2.5 appearance-none cursor-pointer`}
             >
                 <option value="todos">Todos los meses</option>
                 {months.map((month) => (
@@ -23,6 +24,9 @@ const MonthFilter = ({ selectedMonth, onMonthChange }) => {
                     </option>
                 ))}
             </select>
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <Calendar className="h-3 w-3 text-slate-400" />
+            </div>
         </div>
     );
 };
