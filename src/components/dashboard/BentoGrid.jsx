@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import BirthdayCard from '../ui/BirthdayCard';
+import HorizontalCarousel from '../ui/HorizontalCarousel';
 import { formatCurrentDate } from '../../utils/dateUtils';
+import { Home } from 'lucide-react';
 
 const BentoGrid = ({
     todayUsers,
@@ -32,7 +34,7 @@ const BentoGrid = ({
 
                     {allFilteredUsers.length > 0 ? (
                         <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6">
                                 {allFilteredUsers.slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage).map((user) => (
                                     <BirthdayCard
                                         key={user.userId || user.email}
@@ -44,19 +46,31 @@ const BentoGrid = ({
 
                             {/* Paginación */}
                             {allFilteredUsers.length > cardsPerPage && (
-                                <div className="flex justify-center items-center mt-12 gap-2">
-                                    {Array.from({ length: Math.ceil(allFilteredUsers.length / cardsPerPage) }, (_, i) => i + 1).map(page => (
-                                        <button
-                                            key={page}
-                                            onClick={() => setCurrentPage(page)}
-                                            className={`w-10 h-10 rounded-full font-medium transition-colors ${currentPage === page
-                                                ? 'bg-blue-600 text-white shadow-md'
-                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                                }`}
-                                        >
-                                            {page}
-                                        </button>
-                                    ))}
+                                <div className="flex justify-center items-center mt-12 gap-4">
+                                    {/* Botón para volver al inicio */}
+                                    <button
+                                        onClick={() => window.location.href = '/'}
+                                        className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors flex items-center justify-center"
+                                        title="Volver al inicio"
+                                    >
+                                        <Home className="w-4 h-4" />
+                                    </button>
+
+                                    {/* Números de página */}
+                                    <div className="flex gap-2">
+                                        {Array.from({ length: Math.ceil(allFilteredUsers.length / cardsPerPage) }, (_, i) => i + 1).map(page => (
+                                            <button
+                                                key={page}
+                                                onClick={() => setCurrentPage(page)}
+                                                className={`w-10 h-10 rounded-full font-medium transition-colors ${currentPage === page
+                                                    ? 'bg-blue-600 text-white shadow-md'
+                                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                    }`}
+                                            >
+                                                {page}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </>
@@ -81,7 +95,7 @@ const BentoGrid = ({
                         </div>
 
                         {todayUsers.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <HorizontalCarousel>
                                 {todayUsers.map((user) => (
                                     <BirthdayCard
                                         key={user.userId || user.email}
@@ -89,7 +103,7 @@ const BentoGrid = ({
                                         status="today"
                                     />
                                 ))}
-                            </div>
+                            </HorizontalCarousel>
                         ) : (
                             <div className="py-12 text-center bg-white/50 rounded-xl">
                                 <p className="text-slate-500 font-medium text-lg">No hay cumpleaños registrados para hoy.</p>
@@ -102,7 +116,7 @@ const BentoGrid = ({
                             <h2 className="text-xl font-bold text-slate-700 flex items-center gap-3 mb-6">
                                 📅 Esta Semana
                             </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <HorizontalCarousel>
                                 {week1Users.map((user) => (
                                     <BirthdayCard
                                         key={user.userId || user.email}
@@ -110,7 +124,7 @@ const BentoGrid = ({
                                         status="week1"
                                     />
                                 ))}
-                            </div>
+                            </HorizontalCarousel>
                         </section>
                     )}
 
@@ -119,7 +133,7 @@ const BentoGrid = ({
                             <h2 className="text-lg font-bold text-slate-400 mb-6 flex items-center gap-3">
                                 🕓 Cumpleaños Pasados
                             </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <HorizontalCarousel>
                                 {pastUsers.map((user) => (
                                     <BirthdayCard
                                         key={user.userId || user.email}
@@ -127,7 +141,7 @@ const BentoGrid = ({
                                         status="past"
                                     />
                                 ))}
-                            </div>
+                            </HorizontalCarousel>
                         </section>
                     )}
                 </>

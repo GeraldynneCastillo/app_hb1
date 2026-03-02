@@ -1,6 +1,6 @@
 @echo off
 
-:: Obligar a Jenkins a soportar acentos, ñ
+:: Obligar a Jenkins a soportar acentos y ñ
 set PYTHONIOENCODING=utf-8
 chcp 65001 > nul
 

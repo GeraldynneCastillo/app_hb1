@@ -6,53 +6,79 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, get_connection
 from email.mime.base import MIMEBase
 from email import encoders
-from trabajadores.ldap_helpers import buscar_usuario 
+from trabajadores.ldap_helpers import buscar_usuario
+
+# Importamos el modelo de la lista de exclusión
+from trabajadores.models import ExcluidoCumpleanos
+
 
 class Command(BaseCommand):
-    help = 'Envía correos automáticos únicamente a los cumpleañeros del día de hoy'
+    help = "Envía correos automáticos únicamente a los cumpleañeros del día de hoy"
 
     def handle(self, *args, **options):
-        # 1. Obtener todos los trabajadores del LDAP
+        # Obtener todos los trabajadores del LDAP
         self.stdout.write("Buscando trabajadores en LDAP...")
         trabajadores = buscar_usuario("*")
-        
-        # 2. Definir fecha de interés (solo hoy)
-        hoy = datetime.now().strftime("%d/%m") 
+        # Definir fecha de interés (solo hoy)
+        hoy = datetime.now().strftime("%d/%m")
         self.stdout.write(f"Buscando coincidencias para la fecha de hoy: {hoy}")
-        
         cumpleañeros = []
         for t in trabajadores:
-            fecha_str = t.get('cumpleanos', '')
-            nombre = t.get('nombre', 'Sin nombre')
+            fecha_str = t.get("cumpleanos", "")
+            nombre = t.get("nombre", "Sin nombre")
             if fecha_str:
                 self.stdout.write(f"Revisando: {nombre} | Fecha LDAP: {fecha_str}")
                 if hoy in fecha_str:
-                    self.stdout.write(self.style.SUCCESS(f"¡Coincidencia encontrada para {nombre}!"))
+                    self.stdout.write(
+                        self.style.SUCCESS(f"¡Coincidencia encontrada para {nombre}!")
+                    )
                     cumpleañeros.append(t)
         if not cumpleañeros:
-            self.stdout.write(self.style.WARNING(f"No hay cumpleaños para procesar hoy ({hoy})."))
+            self.stdout.write(
+                self.style.WARNING(f"No hay cumpleaños para procesar hoy ({hoy}).")
+            )
             return
-
-        # 3. Lógica de envío de correos
-        self.stdout.write(f"Iniciando envío de correos a {len(cumpleañeros)} personas...")
+        # Lógica de envío de correos
+        self.stdout.write(
+            f"Iniciando envío de correos a {len(cumpleañeros)} personas..."
+        )
         self.enviar_correos(cumpleañeros)
 
     def enviar_correos(self, cumpleañeros):
         asunto = "🎂 ¡Feliz Cumpleaños!"
         remitente = settings.EMAIL_HOST_USER
-        ruta_gif = os.path.join(settings.BASE_DIR, 'static', 'cumple_indef.gif')    
+        ruta_gif = os.path.join(settings.BASE_DIR, "static", "cumple_indef.gif")
         # COOOOOOPIA OCULTAAAAAA PRUEBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-        correos_bcc = ["dreyes@cmf.cl"] 
+        correos_bcc = ["geraldynne.castillo@gmail.com"]
+        # 2. NUEVO: Obtener la lista de correos excluidos desde SQL Server
+        correos_excluidos = list(
+            ExcluidoCumpleanos.objects.values_list("email", flat=True)
+        )
 
         try:
             connection = get_connection()
             connection.open()
             for t in cumpleañeros:
-                email_destinatario = t.get('email')
-                nombre = t.get('nombre', 'Compañero/a')
+                email_destinatario = t.get("email")
+                nombre = t.get("nombre", "Compañero/a")
+
+                # 3. NUEVO: Validar si el correo está en la lista de exclusión
+                if email_destinatario in correos_excluidos:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"Bloqueado: {nombre} ({email_destinatario}) está en la lista de exclusión. No se enviará correo."
+                        )
+                    )
+                    continue  # Salta a la siguiente persona sin enviar correo
+
                 if not email_destinatario or email_destinatario in ["Sin correo", "[]"]:
-                    self.stdout.write(self.style.ERROR(f"Saltando a {nombre}: No tiene correo válido."))
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"Saltando a {nombre}: No tiene correo válido."
+                        )
+                    )
                     continue
+
                 html_content = f"""
                 <html>
                     <body style="font-family: Arial, sans-serif; text-align: center; color: #333;">
@@ -65,30 +91,40 @@ class Command(BaseCommand):
                 """
                 # Creamos el mensaje con soporte para BCC
                 msg = EmailMultiAlternatives(
-                    subject=asunto, 
-                    body=f"¡Feliz cumpleaños {nombre}!", 
-                    from_email=remitente, 
+                    subject=asunto,
+                    body=f"¡Feliz cumpleaños {nombre}!",
+                    from_email=remitente,
                     to=[email_destinatario],
                     bcc=correos_bcc,  # <-- Aquí se aplica la copia oculta
-                    connection=connection
+                    connection=connection,
                 )
                 msg.attach_alternative(html_content, "text/html")
-                msg.subtype = 'related'
+                msg.subtype = "related"
 
                 # Adjuntar el GIF si existe
                 if os.path.exists(ruta_gif):
-                    with open(ruta_gif, 'rb') as f:
-                        part = MIMEBase('image', 'gif')
+                    with open(ruta_gif, "rb") as f:
+                        part = MIMEBase("image", "gif")
                         part.set_payload(f.read())
                         encoders.encode_base64(part)
-                        part.add_header('Content-ID', '<gif_animado>')
-                        part.add_header('Content-Disposition', 'inline', filename='cumple_indef.gif')
+                        part.add_header("Content-ID", "<gif_animado>")
+                        part.add_header(
+                            "Content-Disposition", "inline", filename="cumple_indef.gif"
+                        )
                         msg.attach(part)
                 else:
-                    self.stdout.write(self.style.WARNING(f"Aviso: No se encontró el GIF en {ruta_gif}"))
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"Aviso: No se encontró el GIF en {ruta_gif}"
+                        )
+                    )
+
                 # Enviar correo individual
                 msg.send()
-                self.stdout.write(self.style.SUCCESS(f"✅ Correo enviado a: {email_destinatario}"))
+                self.stdout.write(
+                    self.style.SUCCESS(f"✅ Correo enviado a: {email_destinatario}")
+                )
+
                 # Pausa de seguridad: Si hay más de un cumpleañero, esperamos 5 segundos
                 # Esto evita que Outlook nos bloquee por envío masivo (Spam)
                 if len(cumpleañeros) > 1:
@@ -96,4 +132,6 @@ class Command(BaseCommand):
                     time.sleep(5)
             connection.close()
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"❌ Error crítico en la conexión de correo: {e}"))
+            self.stdout.write(
+                self.style.ERROR(f"❌ Error crítico en la conexión de correo: {e}")
+            )

@@ -16,8 +16,10 @@ const BirthdayCard = ({ user, status }) => {
     return (
         <div
             className={cn(
-                "group relative bg-white border border-slate-300 rounded-2xl p-5 shadow-lg transition-all duration-300 ease-out",
-                "hover:-translate-y-2 hover:shadow-2xl hover:border-blue-200",
+                "group relative bg-white border border-slate-200/80 rounded-2xl p-5",
+                "shadow-[0_2px_16px_rgba(0,0,0,0.06)]",
+                "transition-all duration-300 ease-out",
+                "hover:-translate-y-1.5 hover:shadow-[0_8px_30px_rgba(99,102,241,0.13)] hover:border-indigo-200/70",
                 "flex flex-col w-full",
                 isPast && "opacity-60 grayscale-[0.3]"
             )}

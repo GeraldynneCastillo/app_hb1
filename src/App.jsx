@@ -147,7 +147,15 @@ function App() {
     };
 
     Object.keys(groups).forEach(key => {
-      groups[key].sort(sortByProximity);
+      if (key === 'all_filtered') {
+        groups[key].sort((a, b) => {
+          const nombreCmp = (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' });
+          if (nombreCmp !== 0) return nombreCmp;
+          return (a.apellido || '').localeCompare(b.apellido || '', 'es', { sensitivity: 'base' });
+        });
+      } else {
+        groups[key].sort(sortByProximity);
+      }
     });
 
     return groups;
