@@ -61,11 +61,11 @@ class ExcluidoCumpleanos(models.Model):
     email = models.EmailField(
         unique=True, help_text="Correo electrónico de la cuenta a excluir"
     )
-    motivo = models.CharField(
-        max_length=255, blank=True, null=True, help_text="Ej: Gerente inactivo"
+    vigente = models.BooleanField(
+        default=True, help_text="Indica si la exclusión está activa"
     )
-    # AQUÍ ESTABA EL ERROR, ASEGÚRATE DE QUE LA LÍNEA DE ABAJO TERMINE EN add=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.email
+

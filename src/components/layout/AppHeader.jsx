@@ -1,9 +1,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Ban } from 'lucide-react';
+import { Ban, Home } from 'lucide-react';
 
 const AppHeader = () => {
     const location = useLocation();
+    const enExcluidos = location.pathname === '/excluidos';
 
     return (
         <header
@@ -30,19 +31,28 @@ const AppHeader = () => {
                     </div>
                 </div>
 
-                {/* Navegación */}
+                {/* Navegación — cambia según la ruta */}
                 <nav className="flex items-center gap-2">
-                    <Link
-                        to="/excluidos"
-                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${location.pathname === '/excluidos'
-                                ? 'bg-white/20 text-white'
-                                : 'text-white/70 hover:text-white hover:bg-white/10'
-                            }`}
-                        title="Gestionar exclusiones de correo"
-                    >
-                        <Ban className="w-4 h-4" />
-                        <span className="hidden sm:inline">Exclusiones</span>
-                    </Link>
+                    {enExcluidos ? (
+                        /* En la página de exclusiones: mostrar "Inicio" */
+                        <Link
+                            to="/"
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all text-white/70 hover:text-white hover:bg-white/10"
+                        >
+                            <Home className="w-4 h-4" />
+                            <span className="hidden sm:inline">Inicio</span>
+                        </Link>
+                    ) : (
+                        /* En el resto: mostrar "Exclusiones" */
+                        <Link
+                            to="/excluidos"
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all text-white/70 hover:text-white hover:bg-white/10"
+                            title="Gestionar exclusiones de correo"
+                        >
+                            <Ban className="w-4 h-4" />
+                            <span className="hidden sm:inline">Exclusiones</span>
+                        </Link>
+                    )}
                 </nav>
             </div>
         </header>
@@ -50,4 +60,3 @@ const AppHeader = () => {
 };
 
 export default AppHeader;
-

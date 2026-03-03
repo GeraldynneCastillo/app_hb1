@@ -79,11 +79,8 @@ def buscar_usuario(nombre_usuario="*"):
             raw_manager = obtener_valor("manager")
             jefatura_limpia = limpiar_jefatura(raw_manager)
 
-            # Intentamos obtener gerencia de 'department', si no, de 'company'
+            # Se intenta obtener gerencia de 'department', si no, de 'company'
             gerencia = obtener_valor("department")
-            if not gerencia:
-                gerencia = obtener_valor("company")  # Intento alternativo
-
             resultados.append(
                 {
                     "nombre": obtener_valor("givenName"),
@@ -92,8 +89,7 @@ def buscar_usuario(nombre_usuario="*"):
                     "cargo": obtener_valor("title") or "Colaborador",
                     "cumpleanos": obtener_valor("postalCode"),
                     "jefatura": jefatura_limpia,
-                    "gerencia": gerencia
-                    or "Sin Gerencia Asignada",  # Valor por defecto si todo falla
+                    "gerencia": gerencia or "Sin Gerencia Asignada",
                 }
             )
 

@@ -9,6 +9,32 @@ function cn(...inputs) {
     return twMerge(clsx(inputs));
 }
 
+// Paleta de colores para avatares (fondo, texto)
+const AVATAR_COLORS = [
+    { bg: '#4F46E5', text: '#fff' }, // Indigo
+    { bg: '#0EA5E9', text: '#fff' }, // Sky
+    { bg: '#10B981', text: '#fff' }, // Emerald
+    { bg: '#F59E0B', text: '#fff' }, // Amber
+    { bg: '#EF4444', text: '#fff' }, // Red
+    { bg: '#8B5CF6', text: '#fff' }, // Violet
+    { bg: '#EC4899', text: '#fff' }, // Pink
+    { bg: '#14B8A6', text: '#fff' }, // Teal
+    { bg: '#F97316', text: '#fff' }, // Orange
+    { bg: '#6366F1', text: '#fff' }, // Purple-blue
+    { bg: '#06B6D4', text: '#fff' }, // Cyan
+    { bg: '#84CC16', text: '#fff' }, // Lime
+];
+
+// Elige un color de forma determinística según el nombre completo
+function getAvatarColor(nombre = '', apellido = '') {
+    const seed = `${nombre}${apellido}`;
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+        hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
 const BirthdayCard = ({ user, status }) => {
     const isToday = status === 'today';
     const isPast = status === 'past';
@@ -28,13 +54,16 @@ const BirthdayCard = ({ user, status }) => {
             {/* encabezado: Avatar + Nombre */}
             <div className="flex items-start justify-between gap-3 mb-4">
                 <div className="flex items-center gap-4">
-                    <div className={cn(
-                        "w-14 h-14 rounded-full flex-shrink-0 flex items-center justify-center text-xl font-bold transition-all",
-                        isToday
-                            ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md"
-                            : "bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600"
-                    )}>
-                        {user.nombre ? user.nombre.charAt(0) : <User className="w-6 h-6" />}
+                    <div
+                        className="w-14 h-14 rounded-full flex-shrink-0 flex items-center justify-center text-lg font-bold transition-all shadow-sm"
+                        style={(() => {
+                            const color = getAvatarColor(user.nombre, user.apellido);
+                            return { backgroundColor: color.bg, color: color.text };
+                        })()}
+                    >
+                        {user.nombre
+                            ? `${user.nombre.charAt(0)}${user.apellido ? user.apellido.charAt(0) : ''}`
+                            : <User className="w-6 h-6" />}
                     </div>
 
                     <h3 className="font-bold text-slate-800 text-lg leading-snug group-hover:text-blue-700 transition-colors break-words">
