@@ -94,3 +94,19 @@ def buscar_usuario(nombre_usuario="*"):
             )
 
         return resultados
+
+
+def buscar_por_email(email):
+    """
+    Verifica si un correo existe en el Active Directory.
+    Retorna True si se encuentra al menos un usuario con ese mail exacto.
+    """
+    filtro = f"(&(objectCategory=person)(objectClass=user)(mail={email}))"
+    with get_ldap_connection() as conn:
+        conn.search(
+            search_base=settings.LDAP_CONFIG["BASE_DN"],
+            search_filter=filtro,
+            attributes=["mail"],
+            size_limit=1,
+        )
+        return len(conn.entries) > 0

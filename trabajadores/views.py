@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .ldap_helpers import buscar_usuario
+from .ldap_helpers import buscar_usuario, buscar_por_email
 from .models import ExcluidoCumpleanos
 
 
@@ -41,7 +41,7 @@ def agregar_excluido(request):
     """
     Guarda un correo en la lista de exclusión.
     """
-    email = request.data.get("email")
+    email = request.data.get("email", "").strip().lower()
     vigente = request.data.get("vigente", True)
 
     if not email:
@@ -55,10 +55,22 @@ def agregar_excluido(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    try:
+        existe_en_ad = buscar_por_email(email)
+    except Exception as e:
+        print(f"Error consultando el LDAP: {e}")
+        existe_en_ad = False
+
+    if not existe_en_ad:
+        return Response(
+            {"error": "El correo no corresponde a ningún colaborador registrado en el sistema."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     ExcluidoCumpleanos.objects.create(email=email, vigente=vigente)
 
     return Response(
-        {"mensaje": "Exclusión guardada exitosamente"}, status=status.HTTP_201_CREATED
+        {"mensaje": "Registro guardado exitosamente"}, status=status.HTTP_201_CREATED
     )
 
 
@@ -91,3 +103,38 @@ def eliminar_excluido(request, excluido_id):
         return Response({"mensaje": "Correo reincorporado exitosamente"}, status=status.HTTP_200_OK)
     except ExcluidoCumpleanos.DoesNotExist:
         return Response({"error": "Registro no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["GET"])
+def verificar_excluido(request):
+    """
+    Verifica si un correo ya existe en la lista de exclusión.
+    Retorna: { existe: bool, id: int|null, vigente: bool|null }
+    """
+    email = request.GET.get("email", "").strip().lower()
+    if not email:
+        return Response({"error": "Param\u00e9tro email requerido"}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        excluido = ExcluidoCumpleanos.objects.get(email=email)
+        return Response({"existe": True, "id": excluido.id, "vigente": excluido.vigente})
+    except ExcluidoCumpleanos.DoesNotExist:
+        return Response({"existe": False, "id": None, "vigente": None})
+
+
+@api_view(["PATCH"])
+def actualizar_excluido(request, excluido_id):
+    """
+    Actualiza el campo vigente de un registro existente.
+    """
+    try:
+        excluido = ExcluidoCumpleanos.objects.get(id=excluido_id)
+    except ExcluidoCumpleanos.DoesNotExist:
+        return Response({"error": "Registro no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+    vigente = request.data.get("vigente")
+    if vigente is None:
+        return Response({"error": "El campo vigente es requerido"}, status=status.HTTP_400_BAD_REQUEST)
+
+    excluido.vigente = vigente
+    excluido.save()
+    return Response({"mensaje": "Registro actualizado exitosamente"}, status=status.HTTP_200_OK)

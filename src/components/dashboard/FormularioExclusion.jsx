@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Ban, Loader2, CheckCircle, XCircle, Mail, Trash2, RefreshCw, Users, ShieldOff } from 'lucide-react';
+import { Save, Loader2, CheckCircle, XCircle, Mail, Trash2, RefreshCw, Users, ShieldOff } from 'lucide-react';
 
 const API_BASE_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:8000'
     : 'http://172.19.7.106:8000';
 
-// ─── Toggle Switch ────────────────────────────────────────────────────────────
+// ─── Toggle Switch ─────────────────────────────────────────────────────────────
 const Toggle = ({ value, onChange }) => (
   <button
     type="button"
@@ -21,18 +21,18 @@ const Toggle = ({ value, onChange }) => (
   </button>
 );
 
-// ─── Badge Vigencia ───────────────────────────────────────────────────────────
-const BadgeVigencia = ({ vigente }) => (
-  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${vigente
+// ─── Badge Estado Colaborador ──────────────────────────────────────────────────
+const BadgeEstado = ({ activo }) => (
+  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${activo
     ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
     : 'bg-slate-100 text-slate-500 border border-slate-200'
     }`}>
-    <span className={`w-1.5 h-1.5 rounded-full ${vigente ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-    {vigente ? 'Sí' : 'No'}
+    <span className={`w-1.5 h-1.5 rounded-full ${activo ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+    {activo ? 'Activo' : 'Inactivo'}
   </span>
 );
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
+// ─── Toast ─────────────────────────────────────────────────────────────────────
 const Toast = ({ toasts }) => (
   <div className="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none">
     {toasts.map(t => (
@@ -49,38 +49,78 @@ const Toast = ({ toasts }) => (
   </div>
 );
 
-// ─── Formulario ───────────────────────────────────────────────────────────────
-const Formulario = ({ onExito, excluidos }) => {
+// ─── Formulario ────────────────────────────────────────────────────────────────
+const Formulario = ({ onExito }) => {
   const [email, setEmail] = useState('');
-  const [vigente, setVigente] = useState(true);
+  const [activo, setActivo] = useState(true);
   const [cargando, setCargando] = useState(false);
+  const [verificando, setVerificando] = useState(false);
   const [errorEmail, setErrorEmail] = useState('');
+  // null = sin verificar aún | false = no existe en BD | { id, vigente } = existe
+  const [registroExistente, setRegistroExistente] = useState(null);
 
   const inputBase =
     'w-full bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 ' +
     'focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all pl-10 pr-3 py-3';
 
+  const esEmailValido = (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+
+  const verificarEnBD = async (val) => {
+    setVerificando(true);
+    setRegistroExistente(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/excluidos/verificar/?email=${encodeURIComponent(val.trim().toLowerCase())}`);
+      const data = await res.json();
+      if (data.existe) {
+        setRegistroExistente({ id: data.id, vigente: data.vigente });
+        setActivo(data.vigente);
+      } else {
+        setRegistroExistente(false);
+        setActivo(true);
+      }
+    } catch {
+      setRegistroExistente(false);
+    } finally {
+      setVerificando(false);
+    }
+  };
+
   const handleEmailChange = (val) => {
     setEmail(val);
-    const yaExiste = excluidos.some(e => e.email.toLowerCase() === val.toLowerCase().trim());
-    setErrorEmail(yaExiste ? 'Este correo ya está en la lista de exclusión.' : '');
+    setRegistroExistente(null);
+    if (!val) { setErrorEmail('El correo electrónico es requerido.'); return; }
+    if (!esEmailValido(val)) { setErrorEmail('Ingresa un correo electrónico válido.'); return; }
+    setErrorEmail('');
+    verificarEnBD(val);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (errorEmail) return;
+    if (errorEmail || !email || verificando || registroExistente === null) return;
     setCargando(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/excluidos/agregar/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), vigente }),
-      });
+      let res;
+      if (registroExistente) {
+        // Actualizar vigente del registro existente
+        res = await fetch(`${API_BASE_URL}/api/excluidos/${registroExistente.id}/actualizar/`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vigente: activo }),
+        });
+      } else {
+        // Nuevo registro → vigente=true automáticamente
+        res = await fetch(`${API_BASE_URL}/api/excluidos/agregar/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), vigente: true }),
+        });
+      }
       const data = await res.json();
       if (res.ok) {
         setEmail('');
-        setVigente(true);
-        onExito('exito', data.mensaje || 'Exclusión guardada exitosamente.');
+        setActivo(true);
+        setRegistroExistente(null);
+        onExito('exito', data.mensaje || 'Operación realizada exitosamente.');
       } else {
         onExito('error', data.error || 'Ocurrió un error al procesar la solicitud.');
       }
@@ -91,10 +131,12 @@ const Formulario = ({ onExito, excluidos }) => {
     }
   };
 
+  const esActualizacion = registroExistente !== null && registroExistente !== false;
+
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
 
-      {/* Encabezado integrado con border-b */}
+      {/* Encabezado principal */}
       <div className="px-6 py-5 border-b border-slate-100">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
@@ -102,10 +144,10 @@ const Formulario = ({ onExito, excluidos }) => {
           </div>
           <div>
             <h1 className="text-base font-bold text-slate-800 leading-tight">
-              Gestión de Exclusiones
+              Gestión de Cuentas Excluidas
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Agrega las cuentas que deben ser omitidas en los procesos de notificación automática.
+              Administra los correos omitidos de los envíos automáticos y su estado de actividad.
             </p>
           </div>
         </div>
@@ -114,19 +156,21 @@ const Formulario = ({ onExito, excluidos }) => {
       {/* Campos */}
       <form onSubmit={handleSubmit} className="px-6 py-5 flex flex-col gap-5">
 
-        {/* Email */}
+        {/* Correo electrónico */}
         <div>
           <label className="block text-xs font-semibold text-slate-600 mb-1.5">
             Correo electrónico <span className="text-red-400">*</span>
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Mail className="h-4 w-4 text-slate-500" />
+              {verificando
+                ? <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />
+                : <Mail className="h-4 w-4 text-slate-400" />}
             </div>
             <input
               type="email"
               required
-              className={`${inputBase} ${errorEmail ? 'border-red-300 focus:border-red-400' : ''}`}
+              className={`${inputBase} ${errorEmail ? 'border-red-300 focus:border-red-400 focus:ring-red-500/20' : ''}`}
               placeholder="correo@cmf.cl"
               value={email}
               onChange={(e) => handleEmailChange(e.target.value)}
@@ -139,29 +183,44 @@ const Formulario = ({ onExito, excluidos }) => {
               {errorEmail}
             </p>
           )}
+          {esActualizacion && !errorEmail && (
+            <p className="mt-1.5 text-xs text-amber-600 flex items-center gap-1">
+              <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              Este correo ya existe. Puedes modificar su estado de vigencia.
+            </p>
+          )}
         </div>
 
-        {/* Vigencia */}
-        <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-          <div>
-            <p className="text-xs font-semibold text-slate-600">Vigencia</p>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {vigente ? 'Exclusión activa — no recibirá correos' : 'Exclusión inactiva — recibirá correos'}
-            </p>
+        {/* Vigencia — solo visible si el correo ya existe en la BD */}
+        {esActualizacion && (
+          <div className="flex items-start justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 gap-4">
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-slate-600">Vigencia</p>
+              <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                {activo ? 'Sí — colaborador actualmente activo' : 'No — colaborador inactivo'}
+              </p>
+              <p className="text-xs text-slate-400 mt-1.5 italic leading-relaxed">
+                Indica si la cuenta pertenece a un colaborador actualmente activo en la organización.
+              </p>
+            </div>
+            <div className="flex-shrink-0 pt-0.5">
+              <Toggle value={activo} onChange={setActivo} />
+            </div>
           </div>
-          <Toggle value={vigente} onChange={setVigente} />
-        </div>
+        )}
 
         {/* Botón */}
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={cargando || !!errorEmail}
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md"
+            disabled={cargando || !!errorEmail || !email || verificando || registroExistente === null}
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md"
           >
             {cargando
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
-              : <><Ban className="w-4 h-4" /> Guardar exclusión</>
+              : esActualizacion
+                ? <><Save className="w-4 h-4" /> Actualizar registro</>
+                : <><Save className="w-4 h-4" /> Guardar registro</>
             }
           </button>
         </div>
@@ -170,7 +229,7 @@ const Formulario = ({ onExito, excluidos }) => {
   );
 };
 
-// ─── Tabla ────────────────────────────────────────────────────────────────────
+// ─── Tabla ─────────────────────────────────────────────────────────────────────
 const TablaExcluidos = ({ excluidos, cargandoTabla, onEliminar }) => {
   if (cargandoTabla) {
     return (
@@ -197,18 +256,18 @@ const TablaExcluidos = ({ excluidos, cargandoTabla, onEliminar }) => {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-slate-100 bg-slate-50/60">
-            <th className="text-left text-xs font-semibold text-slate-500 py-3 px-5">Correo electrónico</th>
-            <th className="text-left text-xs font-semibold text-slate-500 py-3 px-5">Vigencia</th>
-            <th className="text-left text-xs font-semibold text-slate-500 py-3 px-5">Fecha de registro</th>
+            <th className="text-left text-xs font-semibold text-slate-500 py-3 px-5">Correo</th>
+            <th className="text-left text-xs font-semibold text-slate-500 py-3 px-5">Estado del Colaborador</th>
+            <th className="text-left text-xs font-semibold text-slate-500 py-3 px-5">Fecha de Registro</th>
             <th className="text-right text-xs font-semibold text-slate-500 py-3 px-5">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {excluidos.map((e) => (
-            <tr key={e.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+            <tr key={e.id} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
               <td className="py-3.5 px-5 font-medium text-slate-700">{e.email}</td>
               <td className="py-3.5 px-5">
-                <BadgeVigencia vigente={e.vigente} />
+                <BadgeEstado activo={e.vigente} />
               </td>
               <td className="py-3.5 px-5 text-slate-400 text-xs whitespace-nowrap">{e.fecha_registro}</td>
               <td className="py-3.5 px-5 text-right">
@@ -228,7 +287,7 @@ const TablaExcluidos = ({ excluidos, cargandoTabla, onEliminar }) => {
   );
 };
 
-// ─── Componente raíz ──────────────────────────────────────────────────────────
+// ─── Componente raíz ───────────────────────────────────────────────────────────
 const FormularioExclusion = ({ onExclusionExitosa }) => {
   const [excluidos, setExcluidos] = useState([]);
   const [cargandoTabla, setCargandoTabla] = useState(true);
@@ -268,7 +327,7 @@ const FormularioExclusion = ({ onExclusionExitosa }) => {
       const res = await fetch(`${API_BASE_URL}/api/excluidos/${id}/eliminar/`, { method: 'DELETE' });
       const data = await res.json();
       if (res.ok) {
-        addToast('exito', `${email} ha sido reincorporado.`);
+        addToast('exito', `${email} ha sido reincorporado exitosamente.`);
         cargarExcluidos();
         if (onExclusionExitosa) onExclusionExitosa();
       } else {
@@ -282,7 +341,7 @@ const FormularioExclusion = ({ onExclusionExitosa }) => {
   return (
     <>
       <Toast toasts={toasts} />
-      <Formulario onExito={handleExito} excluidos={excluidos} />
+      <Formulario onExito={handleExito} />
       <div className="mt-5 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <div>
