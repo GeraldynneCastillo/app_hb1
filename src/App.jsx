@@ -174,6 +174,8 @@ function App() {
             options={opcionesFiltro}
             selectedMonth={filterMonth}
             onMonthChange={setFilterMonth}
+            resultCount={hasActiveFilters ? filteredUsuarios.length : undefined}
+            hasActiveFilters={hasActiveFilters}
           />
         </div>
 

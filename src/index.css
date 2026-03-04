@@ -41,6 +41,7 @@
 .carousel-track>* {
     flex: 0 0 260px;
     max-width: 260px;
+    /* altura fija — todas las cards iguales */
 }
 
 .carousel-arrow {
@@ -89,7 +90,7 @@
     }
 
     .carousel-track>* {
-        flex: 0 0 220px;
-        max-width: 220px;
+        flex: 0 0 250px;
+        max-width: 250px;
     }
 }

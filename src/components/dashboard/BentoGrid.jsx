@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import BirthdayCard from '../ui/BirthdayCard';
 import HorizontalCarousel from '../ui/HorizontalCarousel';
 import { formatCurrentDate } from '../../utils/dateUtils';
-import { Home } from 'lucide-react';
+import { Home, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const BentoGrid = ({
     todayUsers,
@@ -12,15 +12,12 @@ const BentoGrid = ({
     hasActiveFilters = false,
 }) => {
     const [currentPage, setCurrentPage] = useState(1);
-    const cardsPerPage = 12; // 3x4 layout
+    const cardsPerPage = 12;
 
-    // Reiniciar página cuando cambian los filtros
     useEffect(() => {
-        // eslint-disable-next-line
         setCurrentPage(1);
     }, [allFilteredUsers]);
 
-    // Obtener la fecha formateada para mostrar en el título
     const currentDateFormatted = formatCurrentDate();
 
     return (
@@ -28,60 +25,104 @@ const BentoGrid = ({
             {hasActiveFilters ? (
                 // --- VISTA CON FILTROS ACTIVOS (Lista Plana Paginada) ---
                 <section>
-                    <h2 className="text-xl font-bold text-slate-700 flex items-center gap-3 mb-6">
-                        🔍 Resultados de Búsqueda
-                    </h2>
-
                     {allFilteredUsers.length > 0 ? (
                         <>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6">
-                                {allFilteredUsers.slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage).map((user) => (
-                                    <BirthdayCard
-                                        key={user.userId || user.email}
-                                        user={user}
-                                        status="search_result"
-                                    />
-                                ))}
+                            {/* Grid responsivo: 1 col móvil, 2 tablet, 3 desktop, 4 xl */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+                                {allFilteredUsers
+                                    .slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage)
+                                    .map((user) => (
+                                        <BirthdayCard
+                                            key={user.userId || user.email}
+                                            user={user}
+                                            status="search_result"
+                                        />
+                                    ))}
                             </div>
 
-                            {/* Paginación */}
-                            {allFilteredUsers.length > cardsPerPage && (
-                                <div className="flex justify-center items-center mt-12 gap-4">
-                                    {/* Botón para volver al inicio */}
-                                    <button
-                                        onClick={() => window.location.href = '/'}
-                                        className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors flex items-center justify-center"
-                                        title="Volver al inicio"
-                                    >
-                                        <Home className="w-4 h-4" />
-                                    </button>
+                            {/* Paginación windowed estilo Google */}
+                            {allFilteredUsers.length > cardsPerPage && (() => {
+                                const totalPages = Math.ceil(allFilteredUsers.length / cardsPerPage);
+                                const delta = 1; // páginas a cada lado del actual
 
-                                    {/* Números de página */}
-                                    <div className="flex gap-2">
-                                        {Array.from({ length: Math.ceil(allFilteredUsers.length / cardsPerPage) }, (_, i) => i + 1).map(page => (
-                                            <button
-                                                key={page}
-                                                onClick={() => setCurrentPage(page)}
-                                                className={`w-10 h-10 rounded-full font-medium transition-colors ${currentPage === page
-                                                    ? 'bg-blue-600 text-white shadow-md'
-                                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                                    }`}
-                                            >
-                                                {page}
-                                            </button>
-                                        ))}
+                                // Construir la lista de páginas con ellipsis
+                                const pages = [];
+                                const rangeStart = Math.max(2, currentPage - delta);
+                                const rangeEnd = Math.min(totalPages - 1, currentPage + delta);
+
+                                pages.push(1);
+                                if (rangeStart > 2) pages.push('...');
+                                for (let i = rangeStart; i <= rangeEnd; i++) pages.push(i);
+                                if (rangeEnd < totalPages - 1) pages.push('...');
+                                if (totalPages > 1) pages.push(totalPages);
+
+                                const btnBase = "h-9 min-w-[36px] px-2 rounded-xl font-medium text-sm transition-all flex items-center justify-center";
+                                const btnActive = "bg-indigo-600 text-white shadow-md";
+                                const btnInactive = "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-indigo-300";
+                                const btnDisabled = "bg-white border border-slate-100 text-slate-300 cursor-not-allowed";
+
+                                return (
+                                    <div className="flex justify-center items-center mt-10 gap-1.5 flex-wrap">
+                                        {/* Casa */}
+                                        <button
+                                            onClick={() => { setCurrentPage(1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                            className={`${btnBase} ${btnInactive}`}
+                                            title="Volver al inicio"
+                                        >
+                                            <Home className="w-4 h-4" />
+                                        </button>
+
+                                        {/* Anterior */}
+                                        <button
+                                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                            disabled={currentPage === 1}
+                                            className={`${btnBase} ${currentPage === 1 ? btnDisabled : btnInactive} gap-1`}
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                            <span className="hidden sm:inline">Anterior</span>
+                                        </button>
+
+                                        {/* Números con ellipsis */}
+                                        {pages.map((page, i) =>
+                                            page === '...'
+                                                ? <span key={`e${i}`} className="px-1 text-slate-400 text-sm select-none">…</span>
+                                                : <button
+                                                    key={page}
+                                                    onClick={() => setCurrentPage(page)}
+                                                    className={`${btnBase} ${currentPage === page ? btnActive : btnInactive}`}
+                                                >
+                                                    {page}
+                                                </button>
+                                        )}
+
+                                        {/* Siguiente */}
+                                        <button
+                                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                            disabled={currentPage === totalPages}
+                                            className={`${btnBase} ${currentPage === totalPages ? btnDisabled : btnInactive} gap-1`}
+                                        >
+                                            <span className="hidden sm:inline">Siguiente</span>
+                                            <ChevronRight className="w-4 h-4" />
+                                        </button>
                                     </div>
-                                </div>
-                            )}
+                                );
+                            })()}
                         </>
                     ) : (
-                        <div className="py-12 text-center bg-slate-50 rounded-2xl border border-slate-200">
-                            <p className="text-slate-500 font-medium text-lg">No se encontraron resultados para tu búsqueda.</p>
+                        // --- ESTADO VACÍO MEJORADO ---
+                        <div className="py-20 flex flex-col items-center justify-center gap-4 bg-white/60 rounded-2xl border border-slate-200 border-dashed">
+                            <span className="text-6xl select-none">🔍</span>
+                            <div className="text-center">
+                                <p className="text-slate-700 font-semibold text-xl">Sin resultados</p>
+                                <p className="text-slate-400 text-sm mt-1">
+                                    Intenta con otro nombre, mes o gerencia.
+                                </p>
+                            </div>
                         </div>
                     )}
                 </section>
             ) : (
-                // --- VISTA SIN FILTROS (Solo sección de Hoy y Pasados recientes) ---
+                // --- VISTA SIN FILTROS ---
                 <>
                     <section className="bg-blue-50/50 border-l-4 border-blue-500 rounded-r-2xl pt-4 pb-6 px-6 mb-12">
                         <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
@@ -146,7 +187,6 @@ const BentoGrid = ({
                     )}
                 </>
             )}
-
         </div>
     );
 };
