@@ -1,4 +1,3 @@
-
 import { format, differenceInDays, isSameDay, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -10,18 +9,15 @@ export const parseBirthday = (dateString, currentYear = true) => {
     // Asume formato DD/MM
     const parts = dateString.split('/');
     if (parts.length < 2) return null;
-
     const today = new Date();
     const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; // Meses indexados en 0
-
+    const month = parseInt(parts[1], 10) - 1;
     // Por defecto comparar con año actual
     const year = currentYear ? today.getFullYear() : 2000;
     return new Date(year, month, day);
 };
 
 // Obtiene el mes numérico (0-11) de un string de fecha para filtrado
-// OJO: getMonth() devuelve 0-11. 
 export const getMonthIndexFromDate = (dateString) => {
     if (!dateString || dateString === "" || dateString === "[]") return -1;
     const parts = dateString.split('/');
@@ -30,25 +26,19 @@ export const getMonthIndexFromDate = (dateString) => {
 };
 
 
-
 // Obtiene el estado del cumpleaños con lógica estricta por semanas
 export const getBirthdayStatusStrict = (dateString) => {
     const birthdayDate = parseBirthday(dateString, true); // Fecha en año actual
     if (!birthdayDate) return 'unknown';
-
     const today = startOfDay(new Date());
     birthdayDate.setHours(0, 0, 0, 0);
-
     // Si es hoy
     if (isSameDay(today, birthdayDate)) return 'today';
-
     const diff = differenceInDays(birthdayDate, today);
-
-    // Pasado en el año actual
     if (diff < 0) {
         // Solo mostrar hasta 2 días pasados
         if (Math.abs(diff) <= 2) return 'past';
-        return 'too_past'; // Ocultar si es mayor a 2 días
+        return 'too_past';
     }
 
     // Semana Actual: Próximos 7 días (Mañana -> Hoy + 7)
@@ -66,10 +56,9 @@ export const getBirthdayStatusStrict = (dateString) => {
 
 
 
-// Formatea fecha completa para Header (ej: "Martes 18/02/2026")
+// Formatea fecha completa para Header
 export const formatCurrentDate = () => {
     const today = new Date();
-    // Capitalizar primera letra del día
     const formatted = format(today, "EEEE dd/MM/yyyy", { locale: es });
     return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }

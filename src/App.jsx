@@ -33,7 +33,6 @@ function App() {
       // Usamos la URL dinámica configurada arriba
       const response = await fetch(`${API_BASE_URL}/api/usuarios/?q=`);
       const data = await response.json();
-
       const listaLimpia = (data.trabajadores || []).filter(
         u => u && u.nombre && u.nombre !== "" && u.nombre !== "[]" && u.nombre !== "No registrado"
       ).map(u => ({

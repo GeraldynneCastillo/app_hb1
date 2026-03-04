@@ -58,7 +58,6 @@ const Formulario = ({ onExito }) => {
   const [errorEmail, setErrorEmail] = useState('');
   // null = sin verificar aún | false = no existe en BD | { id, vigente } = existe
   const [registroExistente, setRegistroExistente] = useState(null);
-
   const inputBase =
     'w-full bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 ' +
     'focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all pl-10 pr-3 py-3';
@@ -147,7 +146,7 @@ const Formulario = ({ onExito }) => {
               Gestión de Cuentas Excluidas
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Administra los correos omitidos de los envíos automáticos y su estado de actividad.
+              Administra las cuentas que deben ser omitidas en los procesos de notificación automática.
             </p>
           </div>
         </div>
