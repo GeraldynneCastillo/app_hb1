@@ -6,31 +6,23 @@ import { getBirthdayStatusStrict, getMonthIndexFromDate } from './utils/dateUtil
 
 
 // --- CONFIGURACIÓN DINÁMICA DE API ---
-// Si accedes por localhost, usa localhost. Si accedes por IP, usa la IP.
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://127.0.0.1:8000'
   : 'http://172.19.7.106:8000';
 
 function App() {
-  // Estado para datos y UI
   const [usuarios, setUsuarios] = useState([]);
   const [filterMonth, setFilterMonth] = useState('todos');
   const [cargando, setCargando] = useState(false);
-
-  // Estados para nuevos filtros
   const [busqueda, setBusqueda] = useState('');
   const [filtros, setFiltros] = useState({
     gerencia: '',
     jefatura: ''
   });
 
-
-
-  // Función asíncrona para obtener datos
   const fetchUsuarios = async () => {
     setCargando(true);
     try {
-      // Usamos la URL dinámica configurada arriba
       const response = await fetch(`${API_BASE_URL}/api/usuarios/?q=`);
       const data = await response.json();
       const listaLimpia = (data.trabajadores || []).filter(
@@ -48,13 +40,10 @@ function App() {
     setCargando(false);
   };
 
-  // Cargar usuarios al inicio
   useEffect(() => {
     // eslint-disable-next-line
     fetchUsuarios();
   }, []);
-
-  // --- LÓGICA DE FILTRADO Y PROCESAMIENTO ---
 
   const opcionesFiltro = useMemo(() => {
     const unicos = (key) => [...new Set(usuarios.map(u => u[key]).filter(Boolean))].sort();
@@ -74,25 +63,15 @@ function App() {
     setFilterMonth('todos');
   };
 
-  const usersToday = useMemo(() => {
-    return usuarios.filter(u => getBirthdayStatusStrict(u.cumpleanos) === 'today');
-  }, [usuarios]);
-
-  const usersPast = useMemo(() => {
-    return usuarios.filter(u => getBirthdayStatusStrict(u.cumpleanos) === 'past');
-  }, [usuarios]);
-
   const hasActiveFilters = useMemo(() => {
     return busqueda.trim() !== '' ||
       filtros.gerencia !== '' ||
       filtros.jefatura !== '' ||
-      filterMonth !== "todos"; // asumiendo que el filtro de mes también cuenta
+      filterMonth !== "todos";
   }, [busqueda, filtros, filterMonth]);
 
   const filteredUsuarios = useMemo(() => {
     return usuarios.filter(usuario => {
-      // Si no hay filtros activos, solo se mostrará la sección de "Hoy", así que el resto retorna false.
-      // Modificamos esto más abajo en usersByStatus para manejar secciones.
       const searchLower = busqueda.toLowerCase().trim();
       const matchesSearch = searchLower === '' ||
         usuario.nombre?.toLowerCase().includes(searchLower) ||
@@ -109,35 +88,6 @@ function App() {
   }, [usuarios, busqueda, filterMonth, filtros]);
 
   const usersByStatus = useMemo(() => {
-    const groups = {
-      today: [],
-      week1: [],
-      week2: [],
-      week3: [],
-      future: [],
-      past: [],
-      all_filtered: [] // Añadimos una lista plana de todos los filtrados para paginación si se requiere
-    };
-
-    if (!hasActiveFilters) {
-      groups.today = usersToday;
-      groups.past = usersPast;
-      groups.week1 = usuarios.filter(u => getBirthdayStatusStrict(u.cumpleanos) === 'week1');
-    } else {
-      filteredUsuarios.forEach(u => {
-        const status = getBirthdayStatusStrict(u.cumpleanos);
-
-        if (status === 'past') groups.past.push(u);
-        else if (status === 'week1' || status === 'today') groups.week1.push(u);
-        else if (status === 'week2') groups.week2.push(u);
-        else if (status === 'week3') groups.week3.push(u);
-        else if (status === 'future') groups.future.push(u);
-
-        groups.all_filtered.push(u);
-      });
-    }
-
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -151,21 +101,30 @@ function App() {
       return parseFecha(a.cumpleanos) - parseFecha(b.cumpleanos);
     };
 
-    Object.keys(groups).forEach(key => {
-      if (key === 'all_filtered') {
-        groups[key].sort((a, b) => {
-          const nombreCmp = (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' });
-          if (nombreCmp !== 0) return nombreCmp;
-          return (a.apellido || '').localeCompare(b.apellido || '', 'es', { sensitivity: 'base' });
-        });
-      } else {
-        groups[key].sort(sortByProximity);
-      }
+    if (!hasActiveFilters) {
+      return {
+        today: usuarios
+          .filter(u => getBirthdayStatusStrict(u.cumpleanos) === 'today')
+          .sort(sortByProximity),
+        week1: usuarios
+          .filter(u => getBirthdayStatusStrict(u.cumpleanos) === 'week1')
+          .sort(sortByProximity),
+        all_filtered: [],
+      };
+    }
+
+    const all_filtered = [...filteredUsuarios].sort((a, b) => {
+      const nombreCmp = (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' });
+      if (nombreCmp !== 0) return nombreCmp;
+      return (a.apellido || '').localeCompare(b.apellido || '', 'es', { sensitivity: 'base' });
     });
 
-    return groups;
-  }, [filteredUsuarios, usersToday, usersPast, hasActiveFilters, usuarios]);
-
+    return {
+      today: [],
+      week1: [],
+      all_filtered,
+    };
+  }, [filteredUsuarios, hasActiveFilters, usuarios]);
 
 
   return (
@@ -194,10 +153,6 @@ function App() {
           <BentoGrid
             todayUsers={usersByStatus.today}
             week1Users={usersByStatus.week1}
-            week2Users={usersByStatus.week2}
-            week3Users={usersByStatus.week3}
-            futureUsers={usersByStatus.future}
-            pastUsers={usersByStatus.past}
             allFilteredUsers={usersByStatus.all_filtered}
             hasActiveFilters={hasActiveFilters}
           />

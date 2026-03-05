@@ -7,7 +7,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 const BentoGrid = ({
     todayUsers,
     week1Users,
-    pastUsers = [],
     allFilteredUsers = [],
     hasActiveFilters = false,
 }) => {
@@ -43,9 +42,8 @@ const BentoGrid = ({
                             {/* Paginación windowed estilo Google */}
                             {allFilteredUsers.length > cardsPerPage && (() => {
                                 const totalPages = Math.ceil(allFilteredUsers.length / cardsPerPage);
-                                const delta = 1; // páginas a cada lado del actual
+                                const delta = 1;
 
-                                // Construir la lista de páginas con ellipsis
                                 const pages = [];
                                 const rangeStart = Math.max(2, currentPage - delta);
                                 const rangeEnd = Math.min(totalPages - 1, currentPage + delta);
@@ -101,7 +99,7 @@ const BentoGrid = ({
                             })()}
                         </>
                     ) : (
-                        // --- ESTADO VACÍO MEJORADO ---
+                        // --- ESTADO VACÍO ---
                         <div className="py-20 flex flex-col items-center justify-center gap-4 bg-white/60 rounded-2xl border border-slate-200 border-dashed">
                             <span className="text-6xl select-none">🔍</span>
                             <div className="text-center">
@@ -114,7 +112,7 @@ const BentoGrid = ({
                     )}
                 </section>
             ) : (
-                // --- VISTA SIN FILTROS ---
+                // --- VISTA SIN FILTROS: solo HOY y ESTA SEMANA ---
                 <>
                     <section className="bg-gradient-to-b from-blue-50/60 to-transparent border-l-4 border-blue-500 pt-4 pb-10 px-6">
                         <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
@@ -168,28 +166,6 @@ const BentoGrid = ({
                                         key={user.userId || user.email}
                                         user={user}
                                         status="week1"
-                                    />
-                                ))}
-                            </HorizontalCarousel>
-                        </section>
-                    )}
-
-                    {pastUsers.length > 0 && (
-                        <hr className="border-none h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
-                    )}
-                    {pastUsers.length > 0 && (
-                        <section className="bg-gradient-to-b from-blue-50/35 to-transparent border-l-4 border-blue-300 pt-4 pb-10 px-6 opacity-75">
-                            <div className="flex items-center mb-4">
-                                <h2 className="text-xl font-bold text-slate-700 flex items-center gap-2">
-                                    🕓 Cumpleaños Pasados
-                                </h2>
-                            </div>
-                            <HorizontalCarousel>
-                                {pastUsers.map((user) => (
-                                    <BirthdayCard
-                                        key={user.userId || user.email}
-                                        user={user}
-                                        status="past"
                                     />
                                 ))}
                             </HorizontalCarousel>

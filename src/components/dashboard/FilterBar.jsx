@@ -145,16 +145,18 @@ const FilterBar = ({
                             </span>
                         ))}
 
-                        {/* Contador de resultados */}
+                        {/* Contador solamente */}
                         {typeof resultCount === 'number' && (
-                            <span className="ml-auto inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                                <Users className="w-3.5 h-3.5 text-slate-400" />
-                                {resultCount === 0
-                                    ? 'Sin resultados'
-                                    : resultCount === 1
-                                        ? '1 colaborador encontrado'
-                                        : `${resultCount} colaboradores encontrados`}
-                            </span>
+                            <div className="ml-auto flex items-center">
+                                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                                    <Users className="w-3.5 h-3.5 text-slate-400" />
+                                    {resultCount === 0
+                                        ? 'Sin resultados'
+                                        : resultCount === 1
+                                            ? '1 colaborador encontrado'
+                                            : `${resultCount} colaboradores encontrados`}
+                                </span>
+                            </div>
                         )}
                     </div>
                 )}

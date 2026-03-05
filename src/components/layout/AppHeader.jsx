@@ -31,7 +31,7 @@ const AppHeader = ({ hasActiveFilters = false, onReset }) => {
                     </div>
                 </div>
 
-                {/* Navegación — cambia según la ruta */}
+                {/* Navegación — cambia según la ruta y estado de filtros */}
                 <nav className="flex items-center gap-2">
                     {enExcluidos ? (
                         /* En la página de exclusiones: mostrar "Inicio" */
@@ -43,7 +43,7 @@ const AppHeader = ({ hasActiveFilters = false, onReset }) => {
                             <span className="hidden sm:inline">Inicio</span>
                         </Link>
                     ) : hasActiveFilters ? (
-                        /* Hay búsqueda activa: mostrar "Inicio" que resetea filtros */
+                        /* En inicio con filtros activos: mostrar botón "Inicio" estilo nav */
                         <button
                             onClick={onReset}
                             className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all text-white/70 hover:text-white hover:bg-white/10"
@@ -52,7 +52,7 @@ const AppHeader = ({ hasActiveFilters = false, onReset }) => {
                             <span className="hidden sm:inline">Inicio</span>
                         </button>
                     ) : (
-                        /* En el resto: mostrar "Exclusiones" */
+                        /* En inicio sin filtros: mostrar "Exclusiones" */
                         <Link
                             to="/excluidos"
                             className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all text-white/70 hover:text-white hover:bg-white/10"
