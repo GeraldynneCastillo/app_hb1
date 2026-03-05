@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import BirthdayCard from '../ui/BirthdayCard';
 import HorizontalCarousel from '../ui/HorizontalCarousel';
 import { formatCurrentDate } from '../../utils/dateUtils';
-import { Home, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const BentoGrid = ({
     todayUsers,
@@ -21,7 +21,7 @@ const BentoGrid = ({
     const currentDateFormatted = formatCurrentDate();
 
     return (
-        <div className="space-y-12 pb-20">
+        <div className="space-y-8 pb-16">
             {hasActiveFilters ? (
                 // --- VISTA CON FILTROS ACTIVOS (Lista Plana Paginada) ---
                 <section>
@@ -63,14 +63,6 @@ const BentoGrid = ({
 
                                 return (
                                     <div className="flex justify-center items-center mt-10 gap-1.5 flex-wrap">
-                                        {/* Casa */}
-                                        <button
-                                            onClick={() => { setCurrentPage(1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                                            className={`${btnBase} ${btnInactive}`}
-                                            title="Volver al inicio"
-                                        >
-                                            <Home className="w-4 h-4" />
-                                        </button>
 
                                         {/* Anterior */}
                                         <button
@@ -124,8 +116,8 @@ const BentoGrid = ({
             ) : (
                 // --- VISTA SIN FILTROS ---
                 <>
-                    <section className="bg-blue-50/50 border-l-4 border-blue-500 rounded-r-2xl pt-4 pb-6 px-6 mb-12">
-                        <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+                    <section className="bg-gradient-to-b from-blue-50/60 to-transparent border-l-4 border-blue-500 pt-4 pb-10 px-6">
+                        <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
                             <div className="flex items-center gap-3">
                                 <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                     🎉 Celebraciones de Hoy
@@ -146,17 +138,30 @@ const BentoGrid = ({
                                 ))}
                             </HorizontalCarousel>
                         ) : (
-                            <div className="py-12 text-center bg-white/50 rounded-xl">
-                                <p className="text-slate-500 font-medium text-lg">No hay cumpleaños registrados para hoy.</p>
+                            <div className="flex flex-col items-center justify-center gap-3 py-10 border-2 border-dashed border-slate-200 rounded-2xl">
+                                <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-slate-600 font-semibold text-sm">Sin celebraciones hoy.</p>
+                                    <p className="text-slate-400 text-xs mt-0.5">No se registran colaboradores de cumpleaños el día de hoy.</p>
+                                </div>
                             </div>
                         )}
                     </section>
 
                     {week1Users.length > 0 && (
-                        <section className="mt-10">
-                            <h2 className="text-xl font-bold text-slate-700 flex items-center gap-3 mb-6">
-                                📅 Esta Semana
-                            </h2>
+                        <hr className="border-none h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+                    )}
+                    {week1Users.length > 0 && (
+                        <section className="bg-gradient-to-b from-blue-50/50 to-transparent border-l-4 border-blue-400 pt-4 pb-10 px-6">
+                            <div className="flex items-center mb-4">
+                                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                    📅 Esta Semana
+                                </h2>
+                            </div>
                             <HorizontalCarousel>
                                 {week1Users.map((user) => (
                                     <BirthdayCard
@@ -170,10 +175,15 @@ const BentoGrid = ({
                     )}
 
                     {pastUsers.length > 0 && (
-                        <section className="opacity-60 grayscale-[0.5] mt-16 pt-8 border-t border-slate-200">
-                            <h2 className="text-lg font-bold text-slate-400 mb-6 flex items-center gap-3">
-                                🕓 Cumpleaños Pasados
-                            </h2>
+                        <hr className="border-none h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+                    )}
+                    {pastUsers.length > 0 && (
+                        <section className="bg-gradient-to-b from-blue-50/35 to-transparent border-l-4 border-blue-300 pt-4 pb-10 px-6 opacity-75">
+                            <div className="flex items-center mb-4">
+                                <h2 className="text-xl font-bold text-slate-700 flex items-center gap-2">
+                                    🕓 Cumpleaños Pasados
+                                </h2>
+                            </div>
                             <HorizontalCarousel>
                                 {pastUsers.map((user) => (
                                     <BirthdayCard

@@ -65,7 +65,7 @@ const BirthdayCard = ({ user, status }) => {
 
 
             {/* Encabezado: Avatar + Nombre + (fecha si no es hoy) */}
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-3 mb-3 min-h-[52px]">
                 {/* Avatar */}
                 <div
                     className="w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold shadow-sm ring-2 ring-white"
@@ -85,7 +85,7 @@ const BirthdayCard = ({ user, status }) => {
 
                 {/* Badge de fecha — siempre visible, ámbar para hoy, índigo para el resto */}
                 {birthdayBadge && (
-                    <span className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${isToday
+                    <span className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold self-start ${isToday
                         ? 'bg-amber-100 text-amber-700 border border-amber-200'
                         : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
                         }`}>

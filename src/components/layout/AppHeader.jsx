@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Ban, Home } from 'lucide-react';
 
-const AppHeader = () => {
+const AppHeader = ({ hasActiveFilters = false, onReset }) => {
     const location = useLocation();
     const enExcluidos = location.pathname === '/excluidos';
 
@@ -42,6 +42,15 @@ const AppHeader = () => {
                             <Home className="w-4 h-4" />
                             <span className="hidden sm:inline">Inicio</span>
                         </Link>
+                    ) : hasActiveFilters ? (
+                        /* Hay búsqueda activa: mostrar "Inicio" que resetea filtros */
+                        <button
+                            onClick={onReset}
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all text-white/70 hover:text-white hover:bg-white/10"
+                        >
+                            <Home className="w-4 h-4" />
+                            <span className="hidden sm:inline">Inicio</span>
+                        </button>
                     ) : (
                         /* En el resto: mostrar "Exclusiones" */
                         <Link

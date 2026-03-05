@@ -1,13 +1,12 @@
-
 import React from 'react';
 import AppHeader from './AppHeader';
 import AppFooter from './AppFooter';
 
-const MainLayout = ({ children, headerActions }) => {
+const MainLayout = ({ children, headerActions, hasActiveFilters, onReset }) => {
     return (
         <div className="min-h-screen bg-slate-50 relative overflow-hidden font-sans flex flex-col">
             {/* Header principal con gradiente azul */}
-            <AppHeader />
+            <AppHeader hasActiveFilters={hasActiveFilters} onReset={onReset} />
 
             {/* Ambient Background Gradients */}
             <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">

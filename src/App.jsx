@@ -68,6 +68,12 @@ function App() {
     setFiltros(prev => ({ ...prev, [key]: value }));
   };
 
+  const handleReset = () => {
+    setBusqueda('');
+    setFiltros({ gerencia: '', jefatura: '' });
+    setFilterMonth('todos');
+  };
+
   const usersToday = useMemo(() => {
     return usuarios.filter(u => getBirthdayStatusStrict(u.cumpleanos) === 'today');
   }, [usuarios]);
@@ -163,7 +169,7 @@ function App() {
 
 
   return (
-    <MainLayout>
+    <MainLayout hasActiveFilters={hasActiveFilters} onReset={handleReset}>
       <div className="font-sans text-slate-800">
         <div className="flex flex-col gap-8 mb-6 mt-8">
           <FilterBar
