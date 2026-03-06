@@ -16,7 +16,7 @@ const MainLayout = ({ children, headerActions, hasActiveFilters, onReset }) => {
             </div>
 
             {/* Contenido principal - flex-1 para empujar el footer al fondo */}
-            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1 w-full">
+            <div className="relative z-10 max-w-[1600px] 2xl:max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-8 flex-1 w-full">
                 {children}
             </div>
 

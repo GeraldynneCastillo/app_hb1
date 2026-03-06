@@ -13,7 +13,7 @@ const AppHeader = ({ hasActiveFilters = false, onReset }) => {
                 background: 'linear-gradient(135deg, #23338b 0%, #1e40af 35%, #3730a3 65%, #4c1d95 100%)',
             }}
         >
-            <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <div className="max-w-[1600px] 2xl:max-w-[1920px] mx-auto flex items-center justify-between gap-4">
                 {/* Logo + Nombre */}
                 <div className="flex items-center gap-4">
                     <img

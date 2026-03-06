@@ -14,7 +14,7 @@ const AppFooter = () => {
                 background: 'linear-gradient(135deg, #23338b 0%, #1e40af 35%, #3730a3 65%, #4c1d95 100%)',
             }}
         >
-            <div className="max-w-7xl mx-auto flex flex-col items-center gap-2 text-center">
+            <div className="max-w-[1600px] 2xl:max-w-[1920px] mx-auto flex flex-col items-center gap-2 text-center">
                 <p className="text-white font-semibold text-sm sm:text-base">
                     © {currentYear} Todos los derechos reservados
                 </p>

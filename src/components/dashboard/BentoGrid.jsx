@@ -26,8 +26,8 @@ const BentoGrid = ({
                 <section>
                     {allFilteredUsers.length > 0 ? (
                         <>
-                            {/* Grid responsivo: 1 col móvil, 2 tablet, 3 desktop, 4 xl */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+                            {/* Grid responsivo: 1 col móvil, 2 tablet, 3 desktop, 4 xl, 5 2xl */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-5 2xl:gap-6">
                                 {allFilteredUsers
                                     .slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage)
                                     .map((user) => (
@@ -117,11 +117,11 @@ const BentoGrid = ({
                     <section className="bg-gradient-to-b from-blue-50/60 to-transparent border-l-4 border-blue-500 pt-4 pb-10 px-6">
                         <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
                             <div className="flex items-center gap-3">
-                                <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                                <h2 className="text-2xl 2xl:text-3xl font-bold text-slate-800 flex items-center gap-2">
                                     🎉 Celebraciones de Hoy
                                 </h2>
-                                <span className="text-slate-400 font-medium text-xl hidden md:inline-block">|</span>
-                                <span className="text-slate-500 font-medium text-lg capitalize">{currentDateFormatted}</span>
+                                <span className="text-slate-400 font-medium text-xl 2xl:text-2xl hidden md:inline-block">|</span>
+                                <span className="text-slate-500 font-medium text-lg 2xl:text-xl capitalize">{currentDateFormatted}</span>
                             </div>
                         </div>
 
@@ -156,7 +156,7 @@ const BentoGrid = ({
                     {week1Users.length > 0 && (
                         <section className="bg-gradient-to-b from-blue-50/50 to-transparent border-l-4 border-blue-400 pt-4 pb-10 px-6">
                             <div className="flex items-center mb-4">
-                                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                <h2 className="text-xl 2xl:text-2xl font-bold text-slate-800 flex items-center gap-2">
                                     📅 Esta Semana
                                 </h2>
                             </div>
